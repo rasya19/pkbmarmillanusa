@@ -1,3 +1,22 @@
+import { createClient } from '@supabase/supabase-js'
+
 export default async function handler(req, res) {
-  return res.status(200).json({ test: "API siswa jalan", status: "ok" })
+  try {
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY
+    )
+    
+    const { data, error } = await supabase
+      .from('school_students')
+      .select('schoolName, siswa')
+      .eq('schoolName', 'PKBM ARMILLANUSA')
+      .single()
+
+    if (error) throw error
+    
+    return res.status(200).json(data)
+  } catch (err) {
+    return res.status(500).json({ error: err.message })
+  }
 }
