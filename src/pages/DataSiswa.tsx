@@ -16,21 +16,16 @@ export default function DataSiswa() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    console.log('Fetch /api/siswa dimulai...')
-    
     fetch('/api/siswa')
       .then(res => {
-        console.log('Response status:', res.status)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json()
       })
       .then(data => {
-        console.log('Data dari API:', data)
         setSiswa(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch(err => {
-        console.error('Gagal fetch:', err)
         setError(err.message)
         setLoading(false)
       })
@@ -45,4 +40,31 @@ export default function DataSiswa() {
       <h2>Total: {siswa.length}</h2>
       
       {siswa.length === 0 ? (
-        <p>Tidak ada data siswa.</  // ← SALAH. Kurang >
+        <p>Tidak ada data siswa.</p>
+      ) : (
+        <table border={1} cellPadding={8} style={{borderCollapse: 'collapse'}}>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>NISN</th>
+              <th>Kelas</th>
+              <th>WhatsApp</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {siswa.map(s => (
+              <tr key={s.id}>
+                <td>{s.nama || '-'}</td>
+                <td>{s.nisn || '-'}</td>
+                <td>{s.class || '-'}</td>
+                <td>{s.whatsapp || '-'}</td>
+                <td>{s.is_approved ? 'Approved' : 'Pending'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
