@@ -1,25 +1,15 @@
-import { GetServerSideProps } from 'next'
-import { createClient } from '@supabase/supabase-js'
-import React, { useState } from 'react'
-// ... import lain kamu: Search, UserPlus, dll biarin aja
-
-type Props = {
-  initialSiswa: any[]
-  schoolName: string
-}
-
-export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const subdomain = query.school as string || ''
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! // Wajib ada di Vercel Env
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
   const { data: school } = await supabase
    .from('schools')
-   .select('id, name')
-   .eq('subdomain', subdomain)
+   .select('nama_sekolah, npsn') // pake npsn
+   .eq('slug', subdomain)
    .single()
 
   if (!school) {
@@ -27,29 +17,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   }
 
   const { data: siswa } = await supabase
-   .from('siswa')
+   .from('profiles_siswa')
    .select('*')
-   .eq('school_id', school.id)
+   .eq('school_npsn', school.npsn) // filter pake npsn
 
   return {
     props: {
       initialSiswa: siswa || [],
-      schoolName: school.name
+      schoolName: school.nama_sekolah
     }
   }
 }
-
-const Siswa: React.FC<Props> = ({ initialSiswa, schoolName }) => {
-  const [siswa, setSiswa] = useState(initialSiswa)
-  // ... sisa state & function kamu biarin aja
-
-  return (
-    <div>
-      <h1>Data Siswa - {schoolName}</h1>
-      <p>Total: {siswa.length}</p>
-      {/* ... tabel kamu di sini, pake data 'siswa' */}
-    </div>
-  )
-}
-
-export default Siswa
