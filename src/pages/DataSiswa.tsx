@@ -47,7 +47,6 @@ export default function DataSiswa() {
             <h1 className="text-2xl font-bold">MASTER DATA <span className="text-green-400">SISWA</span></h1>
             <p className="text-gray-300 text-sm">KELOLA DATA SISWA PKBM ARMILLANUSA</p>
           </div>
-        </div>
         <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-full flex items-center gap-2 font-semibold transition-all">
           <UserPlus size={18} />
           TAMBAH SISWA
@@ -91,17 +90,25 @@ export default function DataSiswa() {
                   <tr key={s.id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4 font-semibold text-gray-900">{s.nama || '-'}</td>
                     <td className="px-6 py-4">
-                      <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded text-sm">{s.nisn || '-'}</span>
+                      <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded text-sm inline-flex">
+                        {s.nisn || '-'}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded text-sm font-medium">{s.class || '-'}</span>
+                      <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded text-sm font-medium inline-flex">
+                        {s.class?.replace(/\n/g, ' ') || '-'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-gray-600">{s.whatsapp || '-'}</td>
                     <td className="px-6 py-4">
                       {s.is_approved ? (
-                        <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">APPROVED</span>
+                        <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold inline-flex">
+                          APPROVED
+                        </span>
                       ) : (
-                        <span className="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>
+                        <span className="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-semibold inline-flex">
+                          PENDING
+                        </span>
                       )}
                     </td>
                   </tr>
