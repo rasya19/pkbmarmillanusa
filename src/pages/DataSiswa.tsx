@@ -4,7 +4,6 @@ export default function DataSiswa() {
   const [siswa, setSiswa] = useState([])
 
   useEffect(() => {
-    // Panggil API Vercel yg udah kita bikin
     fetch('/api/siswa')
       .then(res => res.json())
       .then(data => setSiswa(data))
@@ -13,7 +12,7 @@ export default function DataSiswa() {
   return (
     <div>
       <h1>Data Siswa</h1>
-      <h2>Total: {siswa.length}</h2>  // ← ini bakal berubah dari 0
+      <h2>Total: {siswa.length}</h2>
       <ul>
         {siswa.map(s => (
           <li key={s.id}>{s.nama} - {s.class}</li>
