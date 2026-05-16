@@ -8,9 +8,10 @@ export default async function handler(req, res) {
     )
     
     const { data, error } = await supabase
-      .from('profiles_siswa')  // ← GANTI INI
-      .select('*')             // ← ambil semua kolom dulu
-      .ilike('nama', '%armilla%')  // ← filter yg nama mengandung armilla
+      .from('profiles_siswa')
+      .select('id, nisn, nama, class, school_npsn, is_approved')
+      .eq('school_npsn', 'P9984421')  // ← NPSN PKBM ARMILLANUSA
+      .eq('is_approved', true)        // ← ambil yg udah di-approve aja
 
     if (error) throw error
     
