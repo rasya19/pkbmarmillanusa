@@ -47,7 +47,6 @@ export default function DataSiswa() {
             <h1 className="text-2xl font-bold">MASTER DATA <span className="text-green-400">SISWA</span></h1>
             <p className="text-gray-300 text-sm">KELOLA DATA SISWA PKBM ARMILLANUSA</p>
           </div>
-        </div>
         <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-full flex items-center gap-2 font-semibold transition-all">
           <UserPlus size={18} />
           TAMBAH SISWA
@@ -101,4 +100,16 @@ export default function DataSiswa() {
                       {s.is_approved ? (
                         <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">APPROVED</span>
                       ) : (
-                        <span className="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-semibold
+                        <span className="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
