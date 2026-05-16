@@ -45,4 +45,4 @@ export default function DataSiswa() {
       <h2>Total: {siswa.length}</h2>
       
       {siswa.length === 0 ? (
-        <p>Tidak ada data siswa.</
+        <p>Tidak ada data siswa.</  // ← SALAH. Kurang >
