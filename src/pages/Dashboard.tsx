@@ -67,13 +67,19 @@ const DUMMY_SCHEDULE = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { school } = useSchool();
+  const { school, isMasterDomain } = useSchool();
   const userRole = localStorage.getItem('userRole') || 'Siswa';
   const isAdmin = userRole === 'Admin' || userRole === 'SuperAdmin';
   const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || (userRole === 'SuperAdmin' ? 'Master Admin' : 'Staf Pengajar');
   const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
   const studentId = localStorage.getItem('studentId');
   const studentClass = localStorage.getItem('studentClass') || '12 - Paket C';
+
+  useEffect(() => {
+    if (userRole === 'SuperAdmin' && isMasterDomain) {
+      navigate('/master-admin');
+    }
+  }, [userRole, isMasterDomain, navigate]);
 
   const [studentResults, setStudentResults] = useState<any[]>([]);
   const [studentProfile, setStudentProfile] = useState<any>(null);

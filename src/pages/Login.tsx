@@ -59,119 +59,93 @@ export default function Login() {
     keysToInitialClear.forEach(k => localStorage.removeItem(k));
 
     try {
+      const emailTrimmed = formData.email.trim().toLowerCase();
+      const passwordRaw = formData.password;
+
+      console.log('DEBUG [Auth] Attempting login for:', emailTrimmed);
+      console.log('DEBUG [Auth] Password length:', passwordRaw.length);
+
       if (loginRole === 'Guru') {
         const { data: guruData, error: dbError } = await supabase
           .from('profiles_guru')
           .select('*')
-          .eq('email', formData.email.trim())
-          .eq('password', formData.password)
+          .eq('email', emailTrimmed)
+          .eq('password', passwordRaw)
           .single();
 
         if (dbError || !guruData) {
-          const { data, error: authError } = await supabase.auth.signInWithPassword({
-            email: formData.email.trim(),
-            password: formData.password,
-          });
-
-          if (authError) throw authError;
-
-          if (data.user) {
-            localStorage.setItem('userEmail', data.user.email || '');
-            localStorage.setItem('userRole', 'Guru');
-            localStorage.setItem('teacherName', data.user.email?.split('@')[0] || 'Guru');
-            localStorage.setItem('teacherEmail', data.user.email || '');
-            navigate('/dashboard');
-          }
+          console.log('DEBUG [Auth] Guru not found in profiles_guru, falling back to Auth');
         } else {
           localStorage.setItem('userRole', 'Guru');
           localStorage.setItem('teacherName', guruData.nama || guruData.name || 'Guru');
           localStorage.setItem('teacherEmail', guruData.email || '');
           navigate('/dashboard');
+          return;
         }
-        return;
       }
 
       if (loginRole === 'Siswa') {
-        const { data, error } = await supabase
+        const { data: sData, error: sError } = await supabase
           .from('profiles_siswa')
           .select('*')
           .eq('nisn', formData.nisn)
           .single();
 
-        if (error || !data) {
-          throw new Error('NISN tidak ditemukan atau akun tidak aktif.');
-        }
+        if (sError || !sData) throw new Error('NISN tidak ditemukan.');
+        if (sData.is_online) throw new Error('Akun sedang aktif di perangkat lain.');
 
-        if (data.is_online) {
-          throw new Error('Akun sedang aktif di perangkat lain.');
-        }
-
-        await supabase.from('profiles_siswa').update({ is_online: true }).eq('id', data.id);
-
+        await supabase.from('profiles_siswa').update({ is_online: true }).eq('id', sData.id);
         localStorage.setItem('userRole', 'Siswa');
-        localStorage.setItem('studentName', data.nama);
-        localStorage.setItem('studentNisn', data.nisn);
-        localStorage.setItem('studentId', data.id);
-        localStorage.setItem('studentClass', data.class);
+        localStorage.setItem('studentName', sData.nama);
+        localStorage.setItem('studentId', sData.id);
+        localStorage.setItem('studentClass', sData.class);
         navigate('/dashboard');
         return;
       }
 
-      const emailTrimmed = formData.email.trim();
+      // Default Auth Login (Admin/SuperAdmin)
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: emailTrimmed,
-        password: formData.password,
+        password: passwordRaw,
       });
 
       if (authError) {
-        console.error('DEBUG [Login] Auth Attempt Email:', emailTrimmed);
-        console.error('DEBUG [Login] Full Auth Error Object:', authError);
+        console.error('DEBUG [Auth] Supabase Rejection:', authError.message);
         throw authError;
       }
 
-      // Successful login
       if (data.user) {
-        console.log('DEBUG [Login] Auth Success for:', data.user.email);
+        console.log('DEBUG [Auth] Success! User ID:', data.user.id);
         localStorage.setItem('userEmail', data.user.email || '');
         
-        // Fetch profile with more flexibility
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
           .single();
         
-        if (profileError) {
-          console.warn('DEBUG [Login] Profile Query Error (Non-Fatal):', profileError);
-        }
-
-        // Try extracting role from various sources
-        // 1. From profiles table (trying multiple column names)
-        // 2. From user metadata (as fallback)
-        // 3. Special case for the known SuperAdmin email
-        const dbRole = profile?.role || profile?.peran || profile?.status;
-        const metaRole = data.user.user_metadata?.role || data.user.user_metadata?.peran;
+        let finalRole = profile?.role || profile?.peran || data.user.user_metadata?.role || 'Siswa';
         
-        let finalRole = dbRole || metaRole || 'Siswa';
-        
-        // Force SuperAdmin role for the principal email
+        // Final sanity check for principal email
         if (data.user.email?.toLowerCase() === 'ismanto095@gmail.com') {
           finalRole = 'SuperAdmin';
         }
         
-        console.log('DEBUG [Login] Resolved Role:', finalRole);
         localStorage.setItem('userRole', finalRole);
-        
-        // Also store name if available
-        const userName = profile?.nama || profile?.name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Admin';
-        localStorage.setItem('adminName', userName);
-
+        localStorage.setItem('adminName', profile?.nama || profile?.name || 'Master Admin');
         localStorage.removeItem('isDemoMode');
-        navigate('/dashboard');
+        
+        if (finalRole === 'SuperAdmin' && isMasterDomain) {
+          navigate('/master-admin');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (error: any) {
-      console.error('DEBUG [Login] Catch Block Error:', error);
-      setErrorMsg(error.message || 'Login gagal. Periksa kembali email dan password Anda.');
+      console.error('DEBUG [Auth] Final Catch:', error.message);
+      setErrorMsg(error.message === 'Invalid login credentials' 
+        ? 'Email atau Password salah. (Supabase Auth Reject)' 
+        : error.message);
     } finally {
       setIsLoading(false);
     }

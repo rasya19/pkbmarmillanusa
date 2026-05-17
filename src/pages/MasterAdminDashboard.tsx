@@ -23,7 +23,7 @@ interface Registration {
 }
 
 export default function MasterAdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'Registrasi Sekolah' | 'PPDB Global'>('Registrasi Sekolah');
+  const [activeTab, setActiveTab] = useState<'Registrasi Sekolah' | 'PPDB Global' | 'Tagihan SaaS'>('Registrasi Sekolah');
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [studentRegistrations, setStudentRegistrations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -168,7 +168,7 @@ export default function MasterAdminDashboard() {
         </div>
 
         <div className="flex bg-white p-1 rounded-2xl border border-brand-border shadow-sm">
-          {['Registrasi Sekolah', 'PPDB Global'].map((tab) => (
+          {['Registrasi Sekolah', 'PPDB Global', 'Tagihan SaaS'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
@@ -373,6 +373,8 @@ export default function MasterAdminDashboard() {
                       </td>
                     </tr>
                   ))
+                ) : activeTab === 'Tagihan SaaS' ? (
+                  <tr><td colSpan={5} className="py-20 text-center text-slate-300"><p className="text-xs font-black italic uppercase">Fitur Manajemen Billing SaaS (Segera Hadir)</p></td></tr>
                 ) : (
                    <tr><td colSpan={5} className="py-20 text-center text-slate-300"><p className="text-xs font-black italic uppercase">Belum ada siswa mendaftar PPDB</p></td></tr>
                 )}

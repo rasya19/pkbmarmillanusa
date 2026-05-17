@@ -52,7 +52,7 @@ type Role = 'SuperAdmin' | 'Admin' | 'Guru' | 'Siswa' | 'Tamu';
 
 export default function Layout() {
   const { schoolSlug } = useParams();
-  const { school } = useSchool();
+  const { school, isMasterDomain } = useSchool();
   const location = useLocation();
   const navigate = useNavigate();
   const [role, setRole] = useState<Role>((localStorage.getItem('userRole') as Role) || 'Siswa');
@@ -265,9 +265,25 @@ export default function Layout() {
     switch (role) {
       case 'SuperAdmin':
       case 'Admin':
-        return [
+        const isAdminAtHome = role === 'SuperAdmin' && isMasterDomain;
+        
+        const baseItems = [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard`, minPlan: 'Silver' },
-          ...(role === 'SuperAdmin' ? [{ icon: ShieldAlert, label: 'Master Admin', path: `/master-admin`, minPlan: 'Silver' }] : []),
+          ...(role === 'SuperAdmin' ? [
+            { icon: ShieldAlert, label: 'Master Admin', path: `/master-admin`, minPlan: 'Silver' },
+            { icon: Wallet, label: 'Tagihan SaaS', path: `/master-admin?tab=billing`, minPlan: 'Silver' }
+          ] : []),
+        ];
+
+        if (isAdminAtHome) {
+          return baseItems.map(item => ({
+            ...item,
+            isLocked: item.minPlan ? checkLocked(item.minPlan as any) : false
+          }));
+        }
+
+        return [
+          ...baseItems,
           { 
             icon: FolderOpen, 
             label: 'Master Data', 
@@ -322,7 +338,7 @@ export default function Layout() {
           { icon: Layers, label: 'Manajemen Aset', path: `${prefix}/dashboard/aset`, minPlan: 'Platinum' },
           { icon: GraduationCap, label: 'Kartu Digital QR', path: `${prefix}/dashboard/kartu-qr`, minPlan: 'Platinum' },
           { icon: Globe, label: 'Web Utama', path: schoolSlug ? `/s/${schoolSlug}` : '/', isExternal: true },
-        ].map(item => ({
+        ].map((item: any) => ({
           ...item,
           isLocked: item.minPlan ? checkLocked(item.minPlan as any) : false,
           subItems: item.subItems?.map((sub: any) => ({
