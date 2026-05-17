@@ -19,14 +19,13 @@ export default function RegisterSchool() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.from('registrations').insert([{
-        school_name: formData.name,
+      const { error } = await supabase.from('pendaftaran_lms').insert([{
+        nama_sekolah: formData.name,
         npsn: formData.npsn,
         admin_name: formData.adminName,
         admin_email: formData.adminEmail,
         whatsapp: formData.whatsapp,
         status: 'pending',
-        is_approved: false,
         created_at: new Date().toISOString()
       }]);
       
