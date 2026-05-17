@@ -10,8 +10,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { summarizeContent, askAssistant } from '@/services/geminiService';
-import { cn } from '@/lib/utils';
+import { summarizeContent, askAssistant } from '@/src/services/geminiService';
+import { cn } from '@/src/lib/utils';
 
 const MOCK_COURSE = {
   id: '1',

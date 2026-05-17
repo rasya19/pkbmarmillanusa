@@ -15,8 +15,8 @@ import {
 import { generateInvoicePDF } from '../services/pdfService';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabase';
+import { cn } from '@/src/lib/utils';
+import { supabase } from '@/src/lib/supabase';
 import { toast } from 'sonner';
 
 const packages = [

@@ -21,8 +21,8 @@ import {
   Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils';
-import AdBanner from '@/components/AdBanner';
+import { cn } from '@/src/lib/utils';
+import AdBanner from '@/src/components/AdBanner';
 
 export default function LandingPage() {
   const { school } = useSchool();
