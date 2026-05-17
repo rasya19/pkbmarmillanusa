@@ -103,8 +103,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (!error && data) {
+        console.log('DEBUG: School data found:', data);
         setSchool(data as School);
       } else {
+        console.log('DEBUG: School NOT found or error:', error);
         setSchool(null);
         setError('Sekolah tidak ditemukan');
       }
