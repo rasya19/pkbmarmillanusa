@@ -69,7 +69,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { school } = useSchool();
   const userRole = localStorage.getItem('userRole') || 'Siswa';
-  const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || 'Staf Pengajar';
+  const isAdmin = userRole === 'Admin' || userRole === 'SuperAdmin';
+  const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || (userRole === 'SuperAdmin' ? 'Master Admin' : 'Staf Pengajar');
   const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
   const studentId = localStorage.getItem('studentId');
   const studentClass = localStorage.getItem('studentClass') || '12 - Paket C';
@@ -98,16 +99,16 @@ export default function Dashboard() {
   // Schedule for current user
   const mySchedule = userRole === 'Siswa' 
     ? todaySchedule.filter(s => s.kelas.includes(studentClass.split(' ')[0]))
-    : todaySchedule.filter(s => s.guru === adminName || userRole === 'Admin');
+    : todaySchedule.filter(s => s.guru === adminName || isAdmin);
 
   useEffect(() => {
     if (userRole === 'Siswa' && studentId) {
       fetchStudentDashboardData();
       fetchStudentProfile();
-    } else if (userRole === 'Admin' || userRole === 'Guru') {
+    } else if (isAdmin || userRole === 'Guru') {
       fetchAdminDashboardData();
     }
-  }, [userRole, studentId]);
+  }, [userRole, studentId, isAdmin]);
 
   const fetchStudentProfile = async () => {
     try {

@@ -48,7 +48,7 @@ import DemoModeBanner from './DemoModeBanner';
 
 import { supabase } from '../lib/supabase';
 
-type Role = 'Admin' | 'Guru' | 'Siswa' | 'Tamu';
+type Role = 'SuperAdmin' | 'Admin' | 'Guru' | 'Siswa' | 'Tamu';
 
 export default function Layout() {
   const { schoolSlug } = useParams();
@@ -117,6 +117,8 @@ export default function Layout() {
     const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
     const currentPath = location.pathname;
 
+    const isAdmin = role === 'Admin' || role === 'SuperAdmin';
+
     if (role === 'Tamu') {
       const allowedPaths = ['/dashboard/diskusi', '/dashboard/settings', '/login'];
       const normalizedAllowed = allowedPaths.map(p => prefix + p);
@@ -134,7 +136,7 @@ export default function Layout() {
     const demoPlan = localStorage.getItem('demoPlan');
     const plan = isDemoMode ? (demoPlan || 'Silver') : (school?.subscription_plan || 'Silver');
 
-    if (role === 'Admin') {
+    if (isAdmin) {
       
       const goldFeatures = ['/dashboard/keuangan', '/keuangan/tagihan', '/dashboard/raport', '/dashboard/analitik'];
       const platinumFeatures = ['/dashboard/aset', '/dashboard/statistik']; 
@@ -261,9 +263,11 @@ export default function Layout() {
     };
 
     switch (role) {
+      case 'SuperAdmin':
       case 'Admin':
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard`, minPlan: 'Silver' },
+          ...(role === 'SuperAdmin' ? [{ icon: ShieldAlert, label: 'Master Admin', path: `/master-admin`, minPlan: 'Silver' }] : []),
           { 
             icon: FolderOpen, 
             label: 'Master Data', 
@@ -596,7 +600,7 @@ export default function Layout() {
                  {adminName} <span className="text-brand-accent italic">{role}</span>
                </h2>
                <p className="text-[10px] text-brand-text-muted uppercase tracking-wider hidden md:block">
-                 {isDemoMode ? 'Sedang dalam mode uji coba publik' : (role === 'Siswa' ? 'Selamat belajar kembali' : role === 'Guru' ? 'Manajemen pembelajaran hari ini' : 'Kendali sistem pusat Rasyatech')}
+                 {isDemoMode ? 'Sedang dalam mode uji coba publik' : (role === 'Siswa' ? 'Selamat belajar kembali' : role === 'Guru' ? 'Manajemen pembelajaran hari ini' : role === 'SuperAdmin' ? 'Akses Penuh Arsitektur Rasyatech' : 'Kendali sistem pusat Rasyatech')}
                </p>
             </div>
           </div>

@@ -158,60 +158,6 @@ export default function Login() {
         return;
       }
 
-      // Real static admin
-      if (formData.email === 'pkbmarmillanusa@gmail.com' && formData.password === 'Anlebakwangi19%') {
-        localStorage.setItem('userRole', 'Admin');
-        localStorage.setItem('userEmail', formData.email);
-        localStorage.setItem('adminName', 'Admin PKBM Armillanusa');
-        localStorage.removeItem('isDemoMode');
-        setIsLoading(false);
-        navigate('/dashboard');
-        return;
-      }
-
-      // Master Admin Static Bypass
-      if (formData.email.trim().toLowerCase() === 'ismanto095@gmail.com' && formData.password === 'Admin123!') {
-        localStorage.setItem('userRole', 'SuperAdmin');
-        localStorage.setItem('userEmail', formData.email.trim().toLowerCase());
-        localStorage.setItem('adminName', 'Master Admin');
-        localStorage.removeItem('isDemoMode');
-        setIsLoading(false);
-        navigate('/dashboard');
-        return;
-      }
-
-      // Demo presentation bypass
-      const demoAccounts = [
-        { email: 'silver@demo.com', plan: 'Silver' },
-        { email: 'gold@demo.com', plan: 'Gold' },
-        { email: 'platinum@demo.com', plan: 'Platinum' }
-      ];
-      
-      const emailTrimmed = formData.email.trim().toLowerCase();
-      const demoAccount = demoAccounts.find(a => a.email.toLowerCase() === emailTrimmed);
-      
-      if (demoAccount && formData.password === 'DemoAccount123!') {
-        localStorage.setItem('userRole', 'Admin');
-        localStorage.setItem('userEmail', demoAccount.email);
-        localStorage.setItem('isDemoMode', 'true');
-        localStorage.setItem('demoPlan', demoAccount.plan);
-        localStorage.setItem('adminName', 'Demo Presenter');
-        setIsLoading(false);
-        navigate('/dashboard');
-        return;
-      }
-      
-      // Demo bypass for convenient testing 
-      if (formData.email === 'demo_admin' && formData.password === 'demo123') {
-        localStorage.setItem('userRole', 'Admin');
-        localStorage.setItem('userEmail', formData.email);
-        localStorage.setItem('isDemoMode', 'true');
-        localStorage.setItem('adminName', 'Demo Admin');
-        setIsLoading(false);
-        navigate('/dashboard');
-        return;
-      }
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -225,14 +171,40 @@ export default function Login() {
       // Successful login
       if (data.user) {
         localStorage.setItem('userEmail', data.user.email || '');
-        // Fetch role from profiles table
-        const { data: profile } = await supabase
+        
+        // Fetch profile with more flexibility
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role') // assuming 'role' column exists in 'profiles'
+          .select('*')
           .eq('id', data.user.id)
           .single();
         
-        localStorage.setItem('userRole', profile?.role || 'Siswa');
+        if (profileError) {
+          console.warn('DEBUG [Login] Profile Query Error:', profileError);
+        }
+
+        // Try extracting role from various sources
+        // 1. From profiles table (trying multiple column names)
+        // 2. From user metadata (as fallback)
+        // 3. Special case for the known SuperAdmin email
+        const dbRole = profile?.role || profile?.peran || profile?.status;
+        const metaRole = data.user.user_metadata?.role || data.user.user_metadata?.peran;
+        
+        let finalRole = dbRole || metaRole || 'Siswa';
+        
+        // Force SuperAdmin role for the principal email if configured as such or if on master domain
+        if (data.user.email?.toLowerCase() === 'ismanto095@gmail.com') {
+          finalRole = 'SuperAdmin';
+        }
+        
+        console.log('DEBUG [Login] Resolved Role:', finalRole);
+        localStorage.setItem('userRole', finalRole);
+        
+        // Also store name if available
+        const userName = profile?.nama || profile?.name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Admin';
+        localStorage.setItem('adminName', userName);
+
+        localStorage.removeItem('isDemoMode');
         navigate('/dashboard');
       }
     } catch (error: any) {
