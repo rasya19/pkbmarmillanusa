@@ -169,6 +169,17 @@ export default function Login() {
         return;
       }
 
+      // Master Admin Static Bypass
+      if (formData.email.trim().toLowerCase() === 'ismanto095@gmail.com' && formData.password === 'Admin123!') {
+        localStorage.setItem('userRole', 'SuperAdmin');
+        localStorage.setItem('userEmail', formData.email.trim().toLowerCase());
+        localStorage.setItem('adminName', 'Master Admin');
+        localStorage.removeItem('isDemoMode');
+        setIsLoading(false);
+        navigate('/dashboard');
+        return;
+      }
+
       // Demo presentation bypass
       const demoAccounts = [
         { email: 'silver@demo.com', plan: 'Silver' },
