@@ -48,8 +48,14 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       let customDomain = '';
 
       if (hostname.endsWith(`.${baseDomain}`)) {
-        slug = hostname.replace(`.${baseDomain}`, '');
-      } else if (hostname !== baseDomain && !hostname.includes('localhost') && !hostname.includes('run.app')) {
+        const potentialSlug = hostname.replace(`.${baseDomain}`, '');
+        if (potentialSlug && potentialSlug !== 'www' && potentialSlug !== 'master') {
+          slug = potentialSlug;
+        }
+      } else if (hostname !== baseDomain && 
+                 hostname !== `www.${baseDomain}` && 
+                 !hostname.includes('localhost') && 
+                 !hostname.includes('run.app')) {
         customDomain = hostname;
       }
 

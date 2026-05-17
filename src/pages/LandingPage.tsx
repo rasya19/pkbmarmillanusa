@@ -25,7 +25,7 @@ import { cn } from '@/src/lib/utils';
 import AdBanner from '@/src/components/AdBanner';
 
 export default function LandingPage() {
-  const { school, loading } = useSchool();
+  const { school, loading, error } = useSchool();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [visitorCount, setVisitorCount] = useState<number>(0);
 
@@ -39,16 +39,17 @@ export default function LandingPage() {
     }
   }, []);
 
-  const schoolName = school?.name || SCHOOL_NAME;
+  const isMaster = !school;
+  const schoolName = school?.name || 'Rasyatech';
   const parts = school?.name 
     ? { first: school.name.split(' ')[0], rest: school.name.split(' ').slice(1).join(' ') }
-    : getSchoolParts();
+    : { first: 'Rasya', rest: 'tech' };
 
-  const accreditation = school?.accreditation || localStorage.getItem('school_accreditation') || 'A (UNGGUL)';
-  const npsn = school?.npsn || localStorage.getItem('school_npsn') || '6987****';
-  const address = school?.address || localStorage.getItem('school_address') || 'Perum Grand Lebakwangi Lestari Desa Mekarwangi Kec. Lebakwangi Kab. Kuningan';
-  const phone = school?.whatsapp || localStorage.getItem('school_phone') || '+62 852-2502-5555';
-  const email = school?.adminEmail || localStorage.getItem('school_email') || 'pkbmarmillanusa@gmail.com';
+  const accreditation = school?.accreditation || (isMaster ? 'verified' : 'A (UNGGUL)');
+  const npsn = school?.npsn || (isMaster ? 'MASTER PLATFORM' : '6987****');
+  const address = school?.address || 'Layanan Digital Terpadu Management Pendidikan';
+  const phone = school?.whatsapp || '+62 852-2502-5555';
+  const email = school?.adminEmail || 'support@rsch.my.id';
 
   const navLinks = [
     { name: 'Tentang Kami', href: '#tentang-kami' },
@@ -86,7 +87,7 @@ export default function LandingPage() {
           
           {/* Desktop Nav */}
            <div className="hidden lg:flex items-center gap-8">
-            {window.location.hostname === 'rsch.my.id' && !school && !loading && (
+            {!school && !loading && !error && (
               <>
                 {localStorage.getItem('userEmail') === 'ismanto095@gmail.com' && (
                   <Link to="/master-admin" className="text-[11px] font-black text-brand-accent hover:text-brand-sidebar transition-colors uppercase tracking-[0.3em] italic flex items-center gap-2">
@@ -157,7 +158,7 @@ export default function LandingPage() {
                   </a>
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
-                  {window.location.hostname === 'rsch.my.id' && localStorage.getItem('userEmail') === 'ismanto095@gmail.com' && (
+                  {!school && !loading && !error && localStorage.getItem('userEmail') === 'ismanto095@gmail.com' && (
                     <Link 
                       to="/master-admin" 
                       onClick={() => setIsMenuOpen(false)}
@@ -166,7 +167,7 @@ export default function LandingPage() {
                       Master Admin <ShieldCheck className="w-4 h-4" />
                     </Link>
                   )}
-                  {window.location.hostname === 'rsch.my.id' && !school && !loading && (
+                  {!school && !loading && !error && (
                     <Link 
                       to="/affiliate" 
                       onClick={() => setIsMenuOpen(false)}
@@ -204,15 +205,27 @@ export default function LandingPage() {
            >
               <div className="inline-flex items-center gap-3 bg-white border border-brand-border px-4 py-2 rounded-2xl text-[10px] font-black text-brand-sidebar uppercase tracking-[0.2em] mb-10 shadow-sm">
                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                 TERAKREDITASI {accreditation}
+                 {isMaster ? 'SMART LEARNING ECOSYSTEM' : `TERAKREDITASI ${accreditation}`}
               </div>
               <h1 className="text-6xl md:text-8xl font-black text-brand-sidebar leading-[0.85] tracking-tighter italic mb-10 group">
-                MEMBANGUN <br />
-                MASA DEPAN <br />
-                <span className="text-brand-accent group-hover:text-brand-sidebar transition-colors duration-500">TANPA BATAS.</span>
+                {isMaster ? (
+                  <>
+                    DIGITAL <br />
+                    EDUCATION <br />
+                    <span className="text-brand-accent group-hover:text-brand-sidebar transition-colors duration-500">PLATFORM.</span>
+                  </>
+                ) : (
+                  <>
+                    MEMBANGUN <br />
+                    MASA DEPAN <br />
+                    <span className="text-brand-accent group-hover:text-brand-sidebar transition-colors duration-500">TANPA BATAS.</span>
+                  </>
+                )}
               </h1>
               <p className="text-xl text-slate-500 font-medium italic mb-12 max-w-xl leading-relaxed">
-                Pusat Kegiatan Belajar Masyarakat (PKBM) yang mengutamakan kualitas, fleksibilitas, dan kemajuan teknologi untuk mencerdaskan bangsa Indonesia.
+                {isMaster 
+                   ? 'Sistem manajemen pendidikan terintegrasi untuk sekolah, PKBM, dan lembaga pendidikan modern di seluruh Indonesia.'
+                   : 'Pusat Kegiatan Belajar Masyarakat (PKBM) yang mengutamakan kualitas, fleksibilitas, dan kemajuan teknologi untuk mencerdaskan bangsa Indonesia.'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-12">
                  <Link to="/login" className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32">
@@ -439,9 +452,9 @@ export default function LandingPage() {
          {(() => {
            const savedContact = localStorage.getItem('school_contact');
            const contact = savedContact ? JSON.parse(savedContact) : {
-             address: 'Perum Grand Lebakwangi Lestari Desa Mekarwangi Kec. Lebakwangi Kab. Kuningan',
+             address: isMaster ? 'Layanan Digital Terpadu Management Pendidikan' : 'Perum Grand Lebakwangi Lestari Desa Mekarwangi Kec. Lebakwangi Kab. Kuningan',
              phone: '+62 852-2502-5555',
-             email: 'pkbmarmillanusa@gmail.com'
+             email: isMaster ? 'support@rsch.my.id' : 'pkbmarmillanusa@gmail.com'
            };
            return (
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
