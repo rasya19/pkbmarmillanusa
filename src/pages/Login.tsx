@@ -59,51 +59,24 @@ export default function Login() {
     keysToInitialClear.forEach(k => localStorage.removeItem(k));
 
     try {
-      // Always sign out of supabase first to clear any stale auth sessions
-      // which might cause 401 Unauthorized on public tables
-      await supabase.auth.signOut().catch(() => {});
-
       if (loginRole === 'Guru') {
-        // Real static guru
-        if (formData.email === 'guru@pkbmarmillanusa.com' && formData.password === 'Guru123!') {
-           localStorage.setItem('userRole', 'Guru');
-           localStorage.setItem('teacherName', 'Guru PKBM');
-           localStorage.setItem('teacherEmail', 'guru@pkbmarmillanusa.com');
-           // Removes demo flag so it behaves as real
-           localStorage.removeItem('isDemoMode');
-           setIsLoading(false);
-           navigate('/dashboard');
-           return;
-        }
-
-        // Mock teacher login for demo
-        if (formData.email === 'demo_guru' && formData.password === 'teacher123') {
-           localStorage.setItem('userRole', 'Guru');
-           localStorage.setItem('isDemoMode', 'true');
-           localStorage.setItem('teacherName', 'Dra. Siti Aminah');
-           localStorage.setItem('teacherEmail', 'siti@email.com'); // Match with template email in Guru.tsx
-           setIsLoading(false);
-           navigate('/dashboard');
-           return;
-        }
-
         const { data: guruData, error: dbError } = await supabase
           .from('profiles_guru')
           .select('*')
-          .eq('email', formData.email)
+          .eq('email', formData.email.trim())
           .eq('password', formData.password)
           .single();
 
         if (dbError || !guruData) {
-          // If not found in profiles_guru, try real Auth as fallback
           const { data, error: authError } = await supabase.auth.signInWithPassword({
-            email: formData.email,
+            email: formData.email.trim(),
             password: formData.password,
           });
 
-          if (authError) throw new Error('Email atau password salah.');
+          if (authError) throw authError;
 
           if (data.user) {
+            localStorage.setItem('userEmail', data.user.email || '');
             localStorage.setItem('userRole', 'Guru');
             localStorage.setItem('teacherName', data.user.email?.split('@')[0] || 'Guru');
             localStorage.setItem('teacherEmail', data.user.email || '');
@@ -119,19 +92,6 @@ export default function Login() {
       }
 
       if (loginRole === 'Siswa') {
-        // Mock student login for demo
-        if (formData.nisn === '0012345678') {
-          localStorage.setItem('userRole', 'Siswa');
-          localStorage.setItem('isDemoMode', 'true');
-          localStorage.setItem('studentName', 'Budi Santoso');
-          localStorage.setItem('studentNisn', '0012345678');
-          localStorage.setItem('studentId', 'demo-siswa-1');
-          setIsLoading(false);
-          navigate('/dashboard');
-          return;
-        }
-
-        // Real student login by NISN
         const { data, error } = await supabase
           .from('profiles_siswa')
           .select('*')
@@ -143,10 +103,9 @@ export default function Login() {
         }
 
         if (data.is_online) {
-          throw new Error('Akun sedang aktif di perangkat lain. Hubungi admin untuk mereset sesi (Database Sync).');
+          throw new Error('Akun sedang aktif di perangkat lain.');
         }
 
-        // Mark as online
         await supabase.from('profiles_siswa').update({ is_online: true }).eq('id', data.id);
 
         localStorage.setItem('userRole', 'Siswa');
@@ -158,18 +117,21 @@ export default function Login() {
         return;
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+      const emailTrimmed = formData.email.trim();
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: emailTrimmed,
         password: formData.password,
       });
 
-      if (error) {
-        console.error('DEBUG [Login] Auth Error:', error);
-        throw error;
+      if (authError) {
+        console.error('DEBUG [Login] Auth Attempt Email:', emailTrimmed);
+        console.error('DEBUG [Login] Full Auth Error Object:', authError);
+        throw authError;
       }
 
       // Successful login
       if (data.user) {
+        console.log('DEBUG [Login] Auth Success for:', data.user.email);
         localStorage.setItem('userEmail', data.user.email || '');
         
         // Fetch profile with more flexibility
@@ -180,7 +142,7 @@ export default function Login() {
           .single();
         
         if (profileError) {
-          console.warn('DEBUG [Login] Profile Query Error:', profileError);
+          console.warn('DEBUG [Login] Profile Query Error (Non-Fatal):', profileError);
         }
 
         // Try extracting role from various sources
@@ -192,7 +154,7 @@ export default function Login() {
         
         let finalRole = dbRole || metaRole || 'Siswa';
         
-        // Force SuperAdmin role for the principal email if configured as such or if on master domain
+        // Force SuperAdmin role for the principal email
         if (data.user.email?.toLowerCase() === 'ismanto095@gmail.com') {
           finalRole = 'SuperAdmin';
         }
@@ -208,6 +170,7 @@ export default function Login() {
         navigate('/dashboard');
       }
     } catch (error: any) {
+      console.error('DEBUG [Login] Catch Block Error:', error);
       setErrorMsg(error.message || 'Login gagal. Periksa kembali email dan password Anda.');
     } finally {
       setIsLoading(false);
