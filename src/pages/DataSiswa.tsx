@@ -47,6 +47,7 @@ export default function DataSiswa() {
             <h1 className="text-2xl font-bold">MASTER DATA <span className="text-green-400">SISWA</span></h1>
             <p className="text-gray-300 text-sm">KELOLA DATA SISWA PKBM ARMILLANUSA</p>
           </div>
+        </div>
         <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-full flex items-center gap-2 font-semibold transition-all">
           <UserPlus size={18} />
           TAMBAH SISWA
