@@ -153,6 +153,7 @@ export default function Login() {
       // Real static admin
       if (formData.email === 'pkbmarmillanusa@gmail.com' && formData.password === 'Anlebakwangi19%') {
         localStorage.setItem('userRole', 'Admin');
+        localStorage.setItem('userEmail', formData.email);
         localStorage.setItem('adminName', 'Admin PKBM Armillanusa');
         localStorage.removeItem('isDemoMode');
         setIsLoading(false);
@@ -172,6 +173,7 @@ export default function Login() {
       
       if (demoAccount && formData.password === 'DemoAccount123!') {
         localStorage.setItem('userRole', 'Admin');
+        localStorage.setItem('userEmail', demoAccount.email);
         localStorage.setItem('isDemoMode', 'true');
         localStorage.setItem('demoPlan', demoAccount.plan);
         localStorage.setItem('adminName', 'Demo Presenter');
@@ -183,6 +185,7 @@ export default function Login() {
       // Demo bypass for convenient testing 
       if (formData.email === 'demo_admin' && formData.password === 'demo123') {
         localStorage.setItem('userRole', 'Admin');
+        localStorage.setItem('userEmail', formData.email);
         localStorage.setItem('isDemoMode', 'true');
         localStorage.setItem('adminName', 'Demo Admin');
         setIsLoading(false);
@@ -202,6 +205,7 @@ export default function Login() {
 
       // Successful login
       if (data.user) {
+        localStorage.setItem('userEmail', data.user.email || '');
         // Fetch role from profiles table
         const { data: profile } = await supabase
           .from('profiles')

@@ -88,7 +88,7 @@ export default function LandingPage() {
            <div className="hidden lg:flex items-center gap-8">
             {window.location.hostname === 'rsch.my.id' && !school && !loading && (
               <>
-                {localStorage.getItem('userEmail') === 'ismantoj88@gmail.com' && (
+                {localStorage.getItem('userEmail') === 'ismanto095@gmail.com' && (
                   <Link to="/master-admin" className="text-[11px] font-black text-brand-accent hover:text-brand-sidebar transition-colors uppercase tracking-[0.3em] italic flex items-center gap-2">
                     Master Admin <ShieldCheck className="w-4 h-4" />
                   </Link>
@@ -157,7 +157,7 @@ export default function LandingPage() {
                   </a>
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
-                  {window.location.hostname === 'rsch.my.id' && localStorage.getItem('userEmail') === 'ismantoj88@gmail.com' && (
+                  {window.location.hostname === 'rsch.my.id' && localStorage.getItem('userEmail') === 'ismanto095@gmail.com' && (
                     <Link 
                       to="/master-admin" 
                       onClick={() => setIsMenuOpen(false)}

@@ -31,7 +31,7 @@ export default function MasterAdminDashboard() {
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const userEmail = localStorage.getItem('userEmail');
-  const isSuperAdmin = userEmail === 'ismantoj88@gmail.com';
+  const isSuperAdmin = userEmail === 'ismanto095@gmail.com';
 
   useEffect(() => {
     if (isSuperAdmin) {
