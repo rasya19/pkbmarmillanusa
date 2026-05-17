@@ -25,7 +25,7 @@ import { cn } from '@/src/lib/utils';
 import AdBanner from '@/src/components/AdBanner';
 
 export default function LandingPage() {
-  const { school } = useSchool();
+  const { school, loading } = useSchool();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [visitorCount, setVisitorCount] = useState<number>(0);
 
@@ -86,7 +86,7 @@ export default function LandingPage() {
           
           {/* Desktop Nav */}
            <div className="hidden lg:flex items-center gap-8">
-            {!school && (
+            {!school && !loading && (
               <>
                 <Link to="/register-school" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest italic">
                   Daftar Sekolah Baru
@@ -152,7 +152,7 @@ export default function LandingPage() {
                   </a>
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
-                  {!school && (
+                  {!school && !loading && (
                     <Link 
                       to="/affiliate" 
                       onClick={() => setIsMenuOpen(false)}
