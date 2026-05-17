@@ -43,17 +43,22 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const resolveByHostname = async () => {
-      const hostname = window.location.hostname;
+      const hostname = window.location.hostname.toLowerCase().trim();
       const baseDomain = 'rsch.my.id'; 
+      
+      console.log('DEBUG [SchoolContext] Resolving hostname:', hostname);
       
       const isMaster = hostname === baseDomain || 
                        hostname === `www.${baseDomain}` || 
                        hostname.includes('localhost') || 
-                       hostname.includes('run.app');
+                       hostname.includes('run.app') ||
+                       hostname.includes('web.app') ||
+                       hostname.includes('vercel.app');
       
       setIsMasterDomain(isMaster);
       
       if (isMaster) {
+        console.log('DEBUG [SchoolContext] Master domain detected');
         setLoading(false);
         return;
       }
@@ -62,12 +67,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       let customDomain = '';
 
       if (hostname.endsWith(`.${baseDomain}`)) {
-        const potentialSlug = hostname.replace(`.${baseDomain}`, '');
-        if (potentialSlug && potentialSlug !== 'www' && potentialSlug !== 'master') {
-          slug = potentialSlug;
+        // Extract subdomain parts
+        const prefix = hostname.substring(0, hostname.length - (baseDomain.length + 1));
+        const parts = prefix.split('.');
+        // Take the last part as the slug (e.g., from 'www.pkbmarmillanusa', take 'pkbmarmillanusa')
+        const detectedSlug = parts[parts.length - 1];
+        
+        if (detectedSlug && detectedSlug !== 'www' && detectedSlug !== 'master') {
+          slug = detectedSlug;
+          console.log('DEBUG [SchoolContext] Detected slug from subdomain:', slug);
         }
       } else {
         customDomain = hostname;
+        console.log('DEBUG [SchoolContext] Treating as custom domain:', customDomain);
       }
 
       if (slug) {
@@ -81,6 +93,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             .single();
             
           if (!error && data) {
+            console.log('DEBUG [SchoolContext] Found school by custom domain:', data.name);
             if (data.status !== 'active') {
               setError('Sekolah belum aktif');
               setSchool(null);
@@ -88,6 +101,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               setSchool(data as School);
             }
           } else {
+            console.warn('DEBUG [SchoolContext] No school found for custom domain:', customDomain);
             setError('Sekolah tidak ditemukan');
           }
         } catch (err) {
@@ -97,6 +111,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
         }
       } else {
+        console.warn('DEBUG [SchoolContext] No slug or custom domain resolved');
         setLoading(false);
       }
     };
