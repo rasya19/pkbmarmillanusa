@@ -88,6 +88,11 @@ export default function LandingPage() {
            <div className="hidden lg:flex items-center gap-8">
             {window.location.hostname === 'rsch.my.id' && !school && !loading && (
               <>
+                {localStorage.getItem('userEmail') === 'Ismanto095@gmail.com' && (
+                  <Link to="/master-admin" className="text-[11px] font-black text-brand-accent hover:text-brand-sidebar transition-colors uppercase tracking-[0.3em] italic flex items-center gap-2">
+                    Master Admin <ShieldCheck className="w-4 h-4" />
+                  </Link>
+                )}
                 <Link to="/register-school" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest italic">
                   Daftar Sekolah Baru
                 </Link>
@@ -152,6 +157,15 @@ export default function LandingPage() {
                   </a>
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
+                  {window.location.hostname === 'rsch.my.id' && localStorage.getItem('userEmail') === 'Ismanto095@gmail.com' && (
+                    <Link 
+                      to="/master-admin" 
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full bg-brand-accent text-white py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic mb-1"
+                    >
+                      Master Admin <ShieldCheck className="w-4 h-4" />
+                    </Link>
+                  )}
                   {window.location.hostname === 'rsch.my.id' && !school && !loading && (
                     <Link 
                       to="/affiliate" 
