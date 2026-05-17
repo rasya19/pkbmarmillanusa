@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Users, ShieldCheck, Check, X, Search, Filter, 
   ExternalLink, Loader2, Rocket, Globe, 
@@ -23,9 +24,39 @@ interface Registration {
 }
 
 export default function MasterAdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'Registrasi Sekolah' | 'PPDB Global' | 'Tagihan SaaS'>('Registrasi Sekolah');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  
+  const getInitialTab = () => {
+    if (tabParam === 'billing') return 'Tagihan SaaS';
+    if (tabParam === 'affiliate') return 'Manajemen Afiliasi';
+    if (tabParam === 'ppdb') return 'PPDB Global';
+    return 'Registrasi Sekolah';
+  };
+
+  const [activeTab, setActiveTab] = useState<'Registrasi Sekolah' | 'PPDB Global' | 'Tagihan SaaS' | 'Manajemen Afiliasi'>(getInitialTab());
+
+  useEffect(() => {
+    const newTab = getInitialTab();
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (tab: any) => {
+    setActiveTab(tab);
+    if (tab === 'Tagihan SaaS') setSearchParams({ tab: 'billing' });
+    else if (tab === 'Manajemen Afiliasi') setSearchParams({ tab: 'affiliate' });
+    else if (tab === 'PPDB Global') setSearchParams({ tab: 'ppdb' });
+    else setSearchParams({});
+  };
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [studentRegistrations, setStudentRegistrations] = useState<any[]>([]);
+  const [affiliates, setAffiliates] = useState<any[]>([
+    { id: 'AF-001', name: 'Bambang Sudarto', school_name: 'PKBM Cahaya Baru', code: 'RASYA-BMB', clicks: 124, referrals: 3, commission: 450000, status: 'Active' },
+    { id: 'AF-002', name: 'Linda Permata', school_name: 'SDIT Al-Ikhlas', code: 'RASYA-LND', clicks: 89, referrals: 1, commission: 150000, status: 'Pending' },
+    { id: 'AF-003', name: 'Heri Kurniawan', school_name: 'MA Persatuan', code: 'RASYA-HER', clicks: 210, referrals: 5, commission: 750000, status: 'Active' },
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -167,13 +198,13 @@ export default function MasterAdminDashboard() {
           </p>
         </div>
 
-        <div className="flex bg-white p-1 rounded-2xl border border-brand-border shadow-sm">
-          {['Registrasi Sekolah', 'PPDB Global', 'Tagihan SaaS'].map((tab) => (
+        <div className="flex bg-white p-1 rounded-2xl border border-brand-border shadow-sm overflow-x-auto max-w-full">
+          {['Registrasi Sekolah', 'PPDB Global', 'Tagihan SaaS', 'Manajemen Afiliasi'].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab as any)}
+              onClick={() => handleTabChange(tab as any)}
               className={cn(
-                "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                 activeTab === tab 
                   ? "bg-brand-sidebar text-white shadow-lg italic" 
                   : "text-slate-400 hover:text-brand-sidebar"
@@ -320,6 +351,64 @@ export default function MasterAdminDashboard() {
                 )}
               </tbody>
             </table>
+          ) : activeTab === 'Manajemen Afiliasi' ? (
+            <table className="w-full min-w-[900px]">
+              <thead>
+                <tr className="text-left border-b border-slate-100">
+                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Agen Afiliasi</th>
+                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Kode Referral</th>
+                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Klik / Ref</th>
+                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Komisi</th>
+                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {isLoading ? (
+                  <tr><td colSpan={5} className="py-20 text-center"><Loader2 className="w-10 h-10 animate-spin text-brand-accent mx-auto" /></td></tr>
+                ) : affiliates.length > 0 ? (
+                  affiliates.map((a) => (
+                    <tr key={a.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-brand-bg rounded-xl flex items-center justify-center font-black text-brand-sidebar italic">
+                            {a.name[0]}
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-brand-sidebar italic uppercase tracking-tight">{a.name}</p>
+                            <p className="text-[10px] font-bold text-slate-400">{a.school_name || 'Personal Agent'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-6">
+                        <code className="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-black text-brand-sidebar italic">{a.code}</code>
+                      </td>
+                      <td className="py-6">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-slate-500 uppercase">{a.clicks} Klik</span>
+                          <span className="text-[9px] font-bold text-brand-accent uppercase">{a.referrals} Pendaftaran</span>
+                        </div>
+                      </td>
+                      <td className="py-6">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-black text-brand-sidebar italic">Rp {a.commission.toLocaleString()}</span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Estimasi Akhir Bulan</span>
+                        </div>
+                      </td>
+                      <td className="py-6 text-right">
+                        <span className={cn(
+                          "text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full italic shadow-sm",
+                          a.status === 'Active' ? "bg-emerald-100 text-emerald-600" : "bg-orange-100 text-orange-600"
+                        )}>
+                          {a.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan={5} className="py-20 text-center text-slate-300"><p className="text-xs font-black italic uppercase">Belum ada agen afiliasi terdaftar</p></td></tr>
+                )}
+              </tbody>
+            </table>
           ) : (
             <table className="w-full min-w-[900px]">
               <thead>
@@ -335,7 +424,7 @@ export default function MasterAdminDashboard() {
                 {isLoading ? (
                   <tr><td colSpan={5} className="py-20 text-center"><Loader2 className="w-10 h-10 animate-spin text-brand-accent mx-auto" /></td></tr>
                 ) : filteredStudents.length > 0 ? (
-                  filteredStudents.map((r) => (
+                  filteredStudents.map((r: any) => (
                     <tr key={r.id} className="group hover:bg-slate-50/50 transition-colors">
                       <td className="py-6">
                         <div className="flex items-center gap-3">

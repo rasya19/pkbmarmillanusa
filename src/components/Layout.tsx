@@ -271,7 +271,8 @@ export default function Layout() {
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard`, minPlan: 'Silver' },
           ...(role === 'SuperAdmin' ? [
             { icon: ShieldAlert, label: 'Master Admin', path: `/master-admin`, minPlan: 'Silver' },
-            { icon: Wallet, label: 'Tagihan SaaS', path: `/master-admin?tab=billing`, minPlan: 'Silver' }
+            { icon: Wallet, label: 'Tagihan SaaS', path: `/master-admin?tab=billing`, minPlan: 'Silver' },
+            { icon: UserPlus, label: 'Afiliasi', path: `/master-admin?tab=affiliate`, minPlan: 'Silver' }
           ] : []),
         ];
 
