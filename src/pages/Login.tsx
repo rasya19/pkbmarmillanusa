@@ -16,10 +16,17 @@ import { motion } from 'motion/react';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { school } = useSchool();
+  const { school, error } = useSchool();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // Handle school-level errors (tenant inactive/not found)
+  useEffect(() => {
+    if (error) {
+      setErrorMsg(error);
+    }
+  }, [error]);
   const [loginRole, setLoginRole] = useState<'Admin' | 'Guru' | 'Siswa' | 'Tamu'>('Admin');
   const [formData, setFormData] = useState({
     email: '',

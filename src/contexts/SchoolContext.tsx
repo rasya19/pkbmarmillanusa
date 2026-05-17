@@ -65,7 +65,14 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             .single();
             
           if (!error && data) {
-            setSchool(data as School);
+            // Check status here as well
+            if (data.status !== 'active') {
+              console.log('School inactive');
+              setError('Sekolah belum aktif');
+              setSchool(null);
+            } else {
+              setSchool(data as School);
+            }
           }
         } catch (err) {
           console.error('Custom domain resolution error:', err);
@@ -104,7 +111,13 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       
       if (!error && data) {
         console.log('DEBUG: School data found:', data);
-        setSchool(data as School);
+        if (data.status !== 'active') {
+          console.log('School inactive');
+          setError('Sekolah belum aktif atau belum diverifikasi');
+          setSchool(null);
+        } else {
+          setSchool(data as School);
+        }
       } else {
         console.log('DEBUG: School NOT found or error:', error);
         setSchool(null);
