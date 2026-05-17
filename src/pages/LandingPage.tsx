@@ -45,13 +45,18 @@ export default function LandingPage() {
     ? { first: school.name.split(' ')[0], rest: school.name.split(' ').slice(1).join(' ') }
     : { first: 'Rasya', rest: 'tech' };
 
-  const accreditation = school?.accreditation || (isMaster ? 'verified' : 'A (UNGGUL)');
-  const npsn = school?.npsn || (isMaster ? 'MASTER PLATFORM' : '6987****');
+  const accreditation = school?.accreditation || (isMaster ? 'VERIFIED' : 'A (UNGGUL)');
+  const npsn = school?.npsn || (isMaster ? 'PLATFORM SAAS' : '6987****');
   const address = school?.address || 'Layanan Digital Terpadu Management Pendidikan';
   const phone = school?.whatsapp || '+62 852-2502-5555';
   const email = school?.adminEmail || 'support@rsch.my.id';
 
-  const navLinks = [
+  const navLinks = isMaster ? [
+    { name: 'Fitur Sistem', href: '#features' },
+    { name: 'Keunggulan', href: '#pros' },
+    { name: 'Harga', href: '#pricing' },
+    { name: 'Kontak', href: '#kontak' },
+  ] : [
     { name: 'Tentang Kami', href: '#tentang-kami' },
     { name: 'Fasilitas', href: '#fasilitas' },
     { name: 'Program', href: '#program' },
@@ -85,20 +90,17 @@ export default function LandingPage() {
              </div>
           </Link>
           
-          {/* Desktop Nav */}
-           <div className="hidden lg:flex items-center gap-8">
-            {!school && !loading && !error && (
+           {/* Desktop Nav */}
+            <div className="hidden lg:flex items-center gap-8">
+            {isMaster && !loading && (
               <>
-                {localStorage.getItem('userEmail') === 'ismanto095@gmail.com' && (
-                  <Link to="/master-admin" className="text-[11px] font-black text-brand-accent hover:text-brand-sidebar transition-colors uppercase tracking-[0.3em] italic flex items-center gap-2">
+                {localStorage.getItem('userEmail')?.trim().toLowerCase() === 'ismanto095@gmail.com' && (
+                  <Link to="/master-admin" className="text-[11px] font-black text-brand-accent hover:text-brand-sidebar transition-colors uppercase tracking-[0.3em] italic flex items-center gap-2 px-3 py-1 bg-brand-accent/10 rounded-lg">
                     Master Admin <ShieldCheck className="w-4 h-4" />
                   </Link>
                 )}
-                <Link to="/register-school" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest italic">
+                <Link to="/register-school" className="text-[11px] font-black text-brand-sidebar hover:text-brand-accent transition-colors uppercase tracking-widest italic pt-0.5">
                   Daftar Sekolah Baru
-                </Link>
-                <Link to="/register-user" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest italic">
-                  Registrasi User
                 </Link>
               </>
             )}
@@ -108,16 +110,16 @@ export default function LandingPage() {
                 href={link.href} 
                 className={cn(
                   "text-[11px] font-bold transition-colors uppercase tracking-widest",
-                  link.name === 'Berita' 
+                  link.name === 'Berita' || link.name === 'Harga'
                     ? "text-brand-sidebar flex items-center gap-1.5" 
                     : "text-slate-500 hover:text-brand-accent"
                 )}
               >
-                {link.name === 'Berita' && <div className="w-1 h-1 bg-brand-accent rounded-full animate-pulse" />}
+                {(link.name === 'Berita' || link.name === 'Harga') && <div className="w-1 h-1 bg-brand-accent rounded-full animate-pulse" />}
                 {link.name}
               </a>
             ))}
-            {!school && (
+            {isMaster && (
               <Link to="/affiliate" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest flex items-center gap-2 italic">
                 Affiliate <Users className="w-3.5 h-3.5 text-brand-accent" />
               </Link>
@@ -158,7 +160,7 @@ export default function LandingPage() {
                   </a>
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
-                  {!school && !loading && !error && localStorage.getItem('userEmail') === 'ismanto095@gmail.com' && (
+                  {isMaster && localStorage.getItem('userEmail')?.toLowerCase() === 'ismanto095@gmail.com' && (
                     <Link 
                       to="/master-admin" 
                       onClick={() => setIsMenuOpen(false)}
@@ -167,7 +169,16 @@ export default function LandingPage() {
                       Master Admin <ShieldCheck className="w-4 h-4" />
                     </Link>
                   )}
-                  {!school && !loading && !error && (
+                  {isMaster && !loading && (
+                    <Link 
+                      to="/register-school" 
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full bg-slate-900 text-white py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic mb-1"
+                    >
+                      Daftar Sekolah <Rocket className="w-4 h-4 text-brand-accent" />
+                    </Link>
+                  )}
+                  {isMaster && !loading && (
                     <Link 
                       to="/affiliate" 
                       onClick={() => setIsMenuOpen(false)}
@@ -228,13 +239,13 @@ export default function LandingPage() {
                    : 'Pusat Kegiatan Belajar Masyarakat (PKBM) yang mengutamakan kualitas, fleksibilitas, dan kemajuan teknologi untuk mencerdaskan bangsa Indonesia.'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-12">
-                 <Link to="/login" className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32">
-                    <Users className="w-6 h-6 mb-2 text-brand-accent" />
-                    <span>LOGIN GURU</span>
+                 <Link to={isMaster ? "/register-school" : "/login"} className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32">
+                    {isMaster ? <Rocket className="w-6 h-6 mb-2 text-brand-accent" /> : <Users className="w-6 h-6 mb-2 text-brand-accent" />}
+                    <span>{isMaster ? 'DAFTAR SEKOLAH' : 'LOGIN GURU'}</span>
                  </Link>
-                 <Link to="/login" className="bg-brand-accent text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-accent/40 flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32">
-                    <BookOpen className="w-6 h-6 mb-2 text-brand-sidebar" />
-                    <span>LOGIN SISWA</span>
+                 <Link to="/login" className={cn("text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32", isMaster ? "bg-slate-700 shadow-slate-900/40" : "bg-brand-accent shadow-brand-accent/40")}>
+                    {isMaster ? <ShieldCheck className="w-6 h-6 mb-2 text-brand-accent" /> : <BookOpen className="w-6 h-6 mb-2 text-brand-sidebar" />}
+                    <span>{isMaster ? 'LOGIN ADMIN' : 'LOGIN SISWA'}</span>
                  </Link>
               </div>
            </motion.div>
@@ -265,186 +276,286 @@ export default function LandingPage() {
               </div>
            </motion.div>
         </div>
-      </header>
-
-      {/* Stats Section moved into About Us */}
-      <section id="tentang-kami" className="py-32 px-6 bg-brand-sidebar text-white relative overflow-hidden">
-         <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex items-center justify-center">
-            <h2 className="text-[20vw] font-black text-white/5 whitespace-nowrap italic tracking-tighter">ABOUT{schoolName}</h2>
-         </div>
-         <div className="max-w-7xl mx-auto relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 mb-24">
-               <div>
-                  <h3 className="text-brand-accent font-black uppercase tracking-[0.4em] text-xs mb-6">Profil Institusi</h3>
-                  <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase leading-[0.9] mb-10">
-                    Mencerdaskan <br />
-                    Masyarakat Lewat <br />
-                    <span className="text-brand-accent">Inovasi Digital.</span>
-                  </h2>
-               </div>
-               <div className="space-y-8">
-                  <p className="text-lg text-slate-300 font-medium italic leading-relaxed">
-                    PKBM {schoolName} hadir sebagai solusi pendidikan alternatif yang setara dan bermartabat. Kami percaya bahwa setiap orang berhak mendapatkan pendidikan tanpa batasan usia, waktu, dan tempat.
-                  </p>
-                  <p className="text-slate-400 italic text-sm leading-relaxed">
-                    Dengan bimbingan tutor profesional dan dukungan infrastruktur teknologi dari Rasyacomp, kami memastikan setiap warga belajar mendapatkan pengalaman pendidikan yang relevan dengan kebutuhan zaman.
-                  </p>
+      </header>       {/* Stats & About (School) or Features (Platform) */}
+       {isMaster ? (
+         <section id="features" className="py-32 px-6 bg-brand-sidebar text-white relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex items-center justify-center">
+               <h2 className="text-[20vw] font-black text-white/5 whitespace-nowrap italic tracking-tighter uppercase">PLATFORM</h2>
+            </div>
+            <div className="max-w-7xl mx-auto relative z-10">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 mb-24">
+                  <div>
+                     <h3 className="text-brand-accent font-black uppercase tracking-[0.4em] text-xs mb-6">Our Ecosystem</h3>
+                     <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase leading-[0.9] mb-10">
+                        Solusi All-in-One <br />
+                        Manajemen <br />
+                        <span className="text-brand-accent">Pendidikan.</span>
+                     </h2>
+                  </div>
+                  <div className="space-y-8">
+                     <p className="text-lg text-slate-300 font-medium italic leading-relaxed">
+                        Rasyatech menyediakan infrastruktur digital terlengkap untuk sekolah, PKBM, LKP, dan pondok pesantren. Mulai dari sistem PPDB Global, Manajemen Guru, hingga Integrasi Keuangan.
+                     </p>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-10">
+                        {[
+                          { title: 'Multi-Tenant', icon: ShieldCheck, desc: 'Setiap sekolah mendapatkan subdomain & branding unik.' },
+                          { title: 'Global PPDB', icon: Rocket, desc: 'Sistem pendaftaran terpusat & terotomasi.' },
+                          { title: 'AI Assistant', icon: Zap, desc: 'Bantuan cerdas untuk guru & manajemen.' },
+                          { title: 'Affiliate System', icon: Users, desc: 'Program kemitraan untuk pertumbuhan ekosistem.' }
+                        ].map((f, i) => (
+                          <div key={i} className="flex gap-4">
+                            <div className="p-2 bg-brand-accent/20 rounded-lg h-fit text-brand-accent"><f.icon className="w-5 h-5" /></div>
+                            <div>
+                               <p className="text-xs font-black uppercase italic text-white mb-1">{f.title}</p>
+                               <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{f.desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                     </div>
+                  </div>
                </div>
             </div>
+         </section>
+       ) : (
+         <section id="tentang-kami" className="py-32 px-6 bg-brand-sidebar text-white relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex items-center justify-center">
+               <h2 className="text-[20vw] font-black text-white/5 whitespace-nowrap italic tracking-tighter">ABOUT{schoolName}</h2>
+            </div>
+            <div className="max-w-7xl mx-auto relative z-10">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 mb-24">
+                  <div>
+                     <h3 className="text-brand-accent font-black uppercase tracking-[0.4em] text-xs mb-6">Profil Institusi</h3>
+                     <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase leading-[0.9] mb-10">
+                       Mencerdaskan <br />
+                       Masyarakat Lewat <br />
+                       <span className="text-brand-accent">Inovasi Digital.</span>
+                     </h2>
+                  </div>
+                  <div className="space-y-8">
+                     <p className="text-lg text-slate-300 font-medium italic leading-relaxed">
+                       PKBM {schoolName} hadir sebagai solusi pendidikan alternatif yang setara dan bermartabat. Kami percaya bahwa setiap orang berhak mendapatkan pendidikan tanpa batasan usia, waktu, dan tempat.
+                     </p>
+                     <p className="text-slate-400 italic text-sm leading-relaxed">
+                       Dengan bimbingan tutor profesional dan dukungan infrastruktur teknologi dari Rasyatech, kami memastikan setiap warga belajar mendapatkan pengalaman pendidikan yang relevan dengan kebutuhan zaman.
+                     </p>
+                  </div>
+               </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center py-12 border-y border-white/10">
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center py-12 border-y border-white/10">
+                  {(() => {
+                    const savedStats = localStorage.getItem('school_stats');
+                    const stats = savedStats ? JSON.parse(savedStats) : [
+                      { label: 'Peserta Didik', value: '2.5k+' },
+                      { label: 'Guru Ahli', value: '45+' },
+                      { label: 'Alumni Sukses', value: '1.2k+' },
+                      { label: 'Program Unggul', value: '12' },
+                    ];
+                    return stats.map((stat: any, i: number) => (
+                      <div key={i}>
+                        <p className="text-4xl md:text-7xl font-black tracking-tighter text-brand-accent mb-2 italic leading-none">{stat.value}</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">{stat.label}</p>
+                      </div>
+                    ));
+                  })()}
+               </div>
+            </div>
+         </section>
+       )}
+       {/* Facilities Section */}
+       {!isMaster && (
+         <section id="fasilitas" className="py-32 px-6 bg-slate-50">
+           <div className="max-w-7xl mx-auto">
+             <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+               <div className="max-w-2xl">
+                 <h3 className="text-brand-accent font-black uppercase tracking-[0.4em] text-xs mb-6">Fasilitas Kampus</h3>
+                 <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-[0.9]">
+                   Lingkungan Belajar <br />
+                   <span className="text-brand-accent">Yang Modern.</span>
+                 </h2>
+               </div>
+               <div className="md:text-right">
+                 <p className="text-slate-500 italic font-medium max-w-sm ml-auto">
+                   Kami menyediakan sarana terbaik untuk mendukung kenyamanan dan fokus belajar siswa.
+                 </p>
+               </div>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                {(() => {
-                 const savedStats = localStorage.getItem('school_stats');
-                 const stats = savedStats ? JSON.parse(savedStats) : [
-                   { label: 'Peserta Didik', value: '2.5k+' },
-                   { label: 'Guru Ahli', value: '45+' },
-                   { label: 'Alumni Sukses', value: '1.2k+' },
-                   { label: 'Program Unggul', value: '12' },
+                 const savedFacilities = localStorage.getItem('school_facilities');
+                 const facilities = savedFacilities ? JSON.parse(savedFacilities) : [
+                   { name: 'Laboratorium Komputer', img: 'https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=800&auto=format&fit=crop' },
+                   { name: 'Ruang Kelas Nyaman', img: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop' },
+                   { name: 'Perpustakaan Digital', img: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop' },
+                   { name: 'Area Kreatif', img: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&auto=format&fit=crop' },
                  ];
-                 return stats.map((stat: any, i: number) => (
-                   <div key={i}>
-                     <p className="text-4xl md:text-7xl font-black tracking-tighter text-brand-accent mb-2 italic leading-none">{stat.value}</p>
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">{stat.label}</p>
+                 return facilities.map((f: any, i: number) => (
+                   <div key={i} className="group relative aspect-square overflow-hidden rounded-[2.5rem] bg-brand-sidebar shadow-lg">
+                     <img src={f.img} alt={f.name} className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" />
+                     <div className="absolute inset-0 bg-gradient-to-t from-brand-sidebar/80 to-transparent flex flex-col justify-end p-8">
+                       <span className="text-white font-black italic text-lg uppercase leading-none tracking-tighter">{f.name}</span>
+                     </div>
                    </div>
                  ));
                })()}
-            </div>
-         </div>
-      </section>
+             </div>
+           </div>
+         </section>
+       )}
 
-      {/* Facilities Section */}
-      <section id="fasilitas" className="py-32 px-6 bg-slate-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-            <div className="max-w-2xl">
-              <h3 className="text-brand-accent font-black uppercase tracking-[0.4em] text-xs mb-6">Fasilitas Kampus</h3>
-              <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-[0.9]">
-                Lingkungan Belajar <br />
-                <span className="text-brand-accent">Yang Modern.</span>
-              </h2>
-            </div>
-            <div className="md:text-right">
-              <p className="text-slate-500 italic font-medium max-w-sm ml-auto">
-                Kami menyediakan sarana terbaik untuk mendukung kenyamanan dan fokus belajar siswa.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(() => {
-              const savedFacilities = localStorage.getItem('school_facilities');
-              const facilities = savedFacilities ? JSON.parse(savedFacilities) : [
-                { name: 'Laboratorium Komputer', img: 'https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=800&auto=format&fit=crop' },
-                { name: 'Ruang Kelas Nyaman', img: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop' },
-                { name: 'Perpustakaan Digital', img: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop' },
-                { name: 'Area Kreatif', img: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&auto=format&fit=crop' },
-              ];
-              return facilities.map((f: any, i: number) => (
-                <div key={i} className="group relative aspect-square overflow-hidden rounded-[2.5rem] bg-brand-sidebar shadow-lg">
-                  <img src={f.img} alt={f.name} className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-sidebar/80 to-transparent flex flex-col justify-end p-8">
-                    <span className="text-white font-black italic text-lg uppercase leading-none tracking-tighter">{f.name}</span>
-                  </div>
-                </div>
-              ));
-            })()}
-          </div>
-        </div>
-      </section>
-
-      {/* Programs */}
-      <section id="program" className="py-32 px-6">
-         <div className="max-w-7xl mx-auto">
-            <div className="mb-24 text-center">
-               <h2 className="text-5xl font-black text-brand-sidebar italic uppercase tracking-tighter">Program <span className="text-brand-accent">Pendidikan</span></h2>
-               <div className="w-32 h-2 bg-brand-accent mx-auto mt-6 rounded-full" />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-               {(() => {
-                 const savedPrograms = localStorage.getItem('school_programs');
-                 const programs = savedPrograms ? JSON.parse(savedPrograms) : [
-                   { title: 'Kesetaraan Paket A, B, C', desc: 'Layanan pendidikan non-formal setara SD, SMP, dan SMA untuk semua usia dengan ijazah resmi.', icon: BookOpen },
-                   { title: 'Vokasi & Keterampilan', desc: 'Kursus praktis menjahit, komputer, dan kewirausahaan untuk bekal langsung ke dunia kerja.', icon: ShieldCheck },
-                   { title: 'LMS Terintegrasi AI', desc: 'Platform belajar modern berbasis cloud dengan asisten AI eksklusif untuk kemudahan belajar.', icon: Users },
-                 ];
-                 const icons = [BookOpen, ShieldCheck, Users, Rocket, Zap, Heart];
-                 
-                 return programs.map((p: any, i: number) => {
-                   const Icon = icons[i % icons.length];
-                   return (
-                    <motion.div 
-                      key={i} 
-                      whileHover={{ scale: 1.02 }}
-                      className="group p-12 bg-white rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all cursor-default shadow-sm hover:shadow-2xl hover:shadow-brand-accent/10 relative overflow-hidden"
-                    >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-bg rounded-bl-full -mr-10 -mt-10 group-hover:bg-brand-accent/5 transition-colors" />
-                        <Icon className="w-16 h-16 text-brand-accent mb-10 group-hover:scale-110 transition-transform relative z-10" />
-                        <h3 className="text-2xl font-black text-brand-sidebar italic mb-6 uppercase tracking-tighter leading-tight relative z-10">{p.title}</h3>
-                        <p className="text-sm text-slate-500 leading-relaxed italic relative z-10">{p.desc}</p>
-                        <div className="mt-8 flex items-center gap-3 text-[10px] font-black text-brand-accent uppercase tracking-widest relative z-10">
-                           Pelajari Selengkapnya <ArrowRight className="w-4 h-4" />
-                        </div>
-                    </motion.div>
-                   );
-                 });
-               })()}
-            </div>
-         </div>
-      </section>
-
-      {/* Berita/Pengumuman Terbaru */}
-      <section id="berita" className="py-32 px-6 bg-slate-50">
-         <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-               <div>
-                  <h2 className="text-3xl font-bold text-brand-sidebar italic uppercase">Berita & <span className="text-brand-accent">Informasi</span></h2>
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-2 italic">Update terbaru dari {schoolName}</p>
+       {/* Programs (School) or Pricing (Platform) */}
+       {!isMaster ? (
+         <section id="program" className="py-32 px-6">
+            <div className="max-w-7xl mx-auto">
+               <div className="mb-24 text-center">
+                  <h2 className="text-5xl font-black text-brand-sidebar italic uppercase tracking-tighter">Program <span className="text-brand-accent">Pendidikan</span></h2>
+                  <div className="w-32 h-2 bg-brand-accent mx-auto mt-6 rounded-full" />
                </div>
-               <Link to="/pengumuman" className="text-xs font-black text-brand-accent uppercase tracking-widest border-b-2 border-brand-accent pb-1">Lihat Semua Berita</Link>
+               
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                  {(() => {
+                    const savedPrograms = localStorage.getItem('school_programs');
+                    const programs = savedPrograms ? JSON.parse(savedPrograms) : [
+                      { title: 'Kesetaraan Paket A, B, C', desc: 'Layanan pendidikan non-formal setara SD, SMP, dan SMA untuk semua usia dengan ijazah resmi.', icon: BookOpen },
+                      { title: 'Vokasi & Keterampilan', desc: 'Kursus praktis menjahit, komputer, dan kewirausahaan untuk bekal langsung ke dunia kerja.', icon: ShieldCheck },
+                      { title: 'LMS Terintegrasi AI', desc: 'Platform belajar modern berbasis cloud dengan asisten AI eksklusif untuk kemudahan belajar.', icon: Users },
+                    ];
+                    const icons = [BookOpen, ShieldCheck, Users, Rocket, Zap, Heart];
+                    
+                    return programs.map((p: any, i: number) => {
+                      const Icon = icons[i % icons.length];
+                      return (
+                       <motion.div 
+                         key={i} 
+                         whileHover={{ scale: 1.02 }}
+                         className="group p-12 bg-white rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all cursor-default shadow-sm hover:shadow-2xl hover:shadow-brand-accent/10 relative overflow-hidden"
+                       >
+                           <Icon className="w-16 h-16 text-brand-accent mb-10 group-hover:scale-110 transition-transform relative z-10" />
+                           <h3 className="text-2xl font-black text-brand-sidebar italic mb-6 uppercase tracking-tighter leading-tight relative z-10">{p.title}</h3>
+                           <p className="text-sm text-slate-500 leading-relaxed italic relative z-10">{p.desc}</p>
+                           <div className="mt-8 flex items-center gap-3 text-[10px] font-black text-brand-accent uppercase tracking-widest relative z-10">
+                              Pelajari Selengkapnya <ArrowRight className="w-4 h-4" />
+                           </div>
+                       </motion.div>
+                      );
+                    });
+                  })()}
+               </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-               {(() => {
-                 const savedBerita = localStorage.getItem('school_berita');
-                 const displayBerita = savedBerita ? JSON.parse(savedBerita).slice(0, 3) : [
-                   { 
-                     title: 'Pembukaan Pendaftaran Siswa Baru Tahun Pelajaran 2026/2027', 
-                     date: '15 Mei 2026', 
-                     category: 'PPDB',
-                     img: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&auto=format&fit=crop'
-                   },
-                   { 
-                     title: 'Workshop Kewirausahaan Digital Bersama Rasyacomp', 
-                     date: '10 Mei 2026', 
-                     category: 'Workshop',
-                     img: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop'
-                   }
-                 ];
+         </section>
+       ) : (
+         <section id="pricing" className="py-32 px-6">
+           <div className="max-w-7xl mx-auto">
+             <div className="text-center mb-24">
+               <h2 className="text-5xl md:text-6xl font-black text-brand-sidebar italic uppercase tracking-tighter">Pilihan <span className="text-brand-accent">Paket</span></h2>
+               <p className="text-slate-500 font-bold uppercase tracking-widest mt-4 italic">Berlangganan Sekarang untuk Transformasi Digital Sekolah Anda</p>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+               {[
+                 { plan: 'Silver', price: 'Rp 5.000.000', features: ['Subdomain rsch.my.id', 'Manajemen Siswa (Max 100)', 'PPDB Online Dasar', 'E-Rapor Digital'] },
+                 { plan: 'Gold', price: 'Rp 12.500.000', features: ['Custom Domain Sendiri', 'LMS Terintegrasi AI', 'Sistem Gaji & Absensi', 'Support WhatsApp 24/7'] },
+                 { plan: 'Platinum', price: 'Rp 30.000.000', features: ['Branding Penuh (Whitelabel)', 'Mobile App Android/iOS', 'Integrasi Pembayaran', 'Cloud Server Dedicated'] }
+               ].map((p, i) => (
+                 <motion.div 
+                   key={i} 
+                   whileHover={{ y: -10 }}
+                   className="p-12 rounded-[3rem] border border-brand-border bg-white hover:border-brand-accent transition-all relative overflow-hidden group shadow-sm hover:shadow-2xl"
+                 >
+                   <h3 className="text-2xl font-black text-brand-sidebar italic mb-2 uppercase">{p.plan}</h3>
+                   <p className="text-4xl font-black text-brand-accent italic mb-8 tracking-tighter">{p.price}<span className="text-xs text-slate-400 font-bold ml-2">/TAHUN</span></p>
+                   <div className="space-y-4 mb-10 min-h-[160px]">
+                     {p.features.map((f, j) => (
+                       <li key={j} className="flex items-start gap-3 text-xs font-bold text-slate-600 italic list-none">
+                         <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" /> {f}
+                       </li>
+                     ))}
+                   </div>
+                   <Link to="/register-school" className="w-full bg-brand-sidebar text-white py-5 rounded-2xl block text-center text-xs font-black uppercase tracking-[.25em] hover:bg-brand-accent transition-all italic shadow-lg shadow-brand-sidebar/20">Pesan Sekarang</Link>
+                 </motion.div>
+               ))}
+             </div>
+           </div>
+         </section>
+       )}
 
-                 return displayBerita.map((news: any, i: number) => (
-                   <motion.div 
-                     key={news.id || i}
-                     whileHover={{ y: -10 }}
-                     className="bg-white rounded-3xl overflow-hidden border border-brand-border shadow-sm group cursor-pointer"
-                   >
-                      <div className="h-48 overflow-hidden relative">
-                         <img src={news.img || undefined} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                         <div className="absolute top-4 left-4 bg-brand-sidebar text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">{news.category}</div>
-                      </div>
-                      <div className="p-6">
-                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{news.date}</p>
-                         <h3 className="text-lg font-bold text-brand-sidebar italic leading-tight group-hover:text-brand-accent transition-colors">{news.title}</h3>
-                         <div className="mt-6 flex items-center gap-2 text-[10px] font-black text-brand-sidebar uppercase tracking-widest">
-                            Selengkapnya <ArrowRight className="w-3 h-3" />
+       {/* Berita (School) or Ecosystem (Platform) */}
+       {!isMaster ? (
+         <section id="berita" className="py-32 px-6 bg-slate-50">
+            <div className="max-w-7xl mx-auto">
+               <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                  <div>
+                     <h2 className="text-3xl font-bold text-brand-sidebar italic uppercase">Berita & <span className="text-brand-accent">Informasi</span></h2>
+                     <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-2 italic">Update terbaru dari {schoolName}</p>
+                  </div>
+                  <Link to="/pengumuman" className="text-xs font-black text-brand-accent uppercase tracking-widest border-b-2 border-brand-accent pb-1">Lihat Semua Berita</Link>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {(() => {
+                    const savedBerita = localStorage.getItem('school_berita');
+                    const displayBerita = savedBerita ? JSON.parse(savedBerita).slice(0, 3) : [
+                      { 
+                        title: 'Pembukaan Pendaftaran Siswa Baru Tahun Pelajaran 2026/2027', 
+                        date: '15 Mei 2026', 
+                        category: 'PPDB',
+                        img: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&auto=format&fit=crop'
+                      },
+                      { 
+                        title: 'Workshop Kewirausahaan Digital Bersama Rasyacomp', 
+                        date: '10 Mei 2026', 
+                        category: 'Workshop',
+                        img: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop'
+                      }
+                    ];
+
+                    return displayBerita.map((news: any, i: number) => (
+                      <motion.div 
+                        key={news.id || i}
+                        whileHover={{ y: -10 }}
+                        className="bg-white rounded-3xl overflow-hidden border border-brand-border shadow-sm group cursor-pointer"
+                      >
+                         <div className="h-48 overflow-hidden relative">
+                            <img src={news.img || undefined} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            <div className="absolute top-4 left-4 bg-brand-sidebar text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">{news.category}</div>
                          </div>
-                      </div>
-                   </motion.div>
-                 ));
-               })()}
+                         <div className="p-6">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{news.date}</p>
+                            <h3 className="text-lg font-bold text-brand-sidebar italic leading-tight group-hover:text-brand-accent transition-colors">{news.title}</h3>
+                            <div className="mt-6 flex items-center gap-2 text-[10px] font-black text-brand-sidebar uppercase tracking-widest">
+                               Selengkapnya <ArrowRight className="w-3 h-3" />
+                            </div>
+                         </div>
+                      </motion.div>
+                    ));
+                  })()}
+               </div>
             </div>
-         </div>
-      </section>
+         </section>
+       ) : (
+         <section id="pros" className="py-32 px-6 bg-slate-50 relative overflow-hidden">
+            <div className="max-w-7xl mx-auto flex flex-col items-center">
+               <div className="mb-20 text-center">
+                  <h2 className="text-5xl font-black text-brand-sidebar italic uppercase tracking-tighter mb-4">Kenapa Memilih <span className="text-brand-accent">Rasyatech?</span></h2>
+                  <p className="text-slate-500 font-bold uppercase tracking-widest italic">Keuntungan Bergabung dalam Ekosistem Smart Learning Kami</p>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+                  {[
+                    { label: 'Implementasi Cepat', icon: Zap, color: 'text-orange-500', bg: 'bg-orange-50' },
+                    { label: 'Uptime 99.9%', icon: ShieldCheck, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                    { label: 'Hemat Biaya IT', icon: DollarSign, color: 'text-blue-500', bg: 'bg-blue-50' }
+                  ].map((item, i) => (
+                    <div key={i} className="p-10 bg-white border border-brand-border rounded-[2.5rem] shadow-sm flex flex-col items-center text-center group hover:border-brand-accent transition-all">
+                       <div className={cn("p-5 rounded-2xl mb-6 group-hover:scale-110 transition-transform", item.bg, item.color)}>
+                         <item.icon className="w-8 h-8" />
+                       </div>
+                       <h4 className="text-xl font-black text-brand-sidebar italic uppercase tracking-tight mb-2">{item.label}</h4>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Infrastruktur Berbasis Cloud Enterprise</p>
+                    </div>
+                  ))}
+               </div>
+            </div>
+         </section>
+       )}
 
       {/* Footer */}
       <footer id="kontak" className="bg-slate-50 border-t border-brand-border py-20 px-6">
