@@ -86,12 +86,16 @@ export default function LandingPage() {
           
           {/* Desktop Nav */}
            <div className="hidden lg:flex items-center gap-8">
-            <Link to="/register-school" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest italic">
-              Daftar Sekolah Baru
-            </Link>
-            <Link to="/register-user" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest italic">
-              Registrasi User
-            </Link>
+            {!school && (
+              <>
+                <Link to="/register-school" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest italic">
+                  Daftar Sekolah Baru
+                </Link>
+                <Link to="/register-user" className="text-[11px] font-bold text-slate-500 hover:text-brand-accent transition-colors uppercase tracking-widest italic">
+                  Registrasi User
+                </Link>
+              </>
+            )}
             {navLinks.map((link) => (
               <a 
                 key={link.name}

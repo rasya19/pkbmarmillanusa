@@ -390,45 +390,6 @@ export default function Login() {
                 </button>
               </div>
 
-              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mt-2">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 italic">Akses Demo Presentation:</p>
-                 <div className="space-y-3">
-                    <div className="flex gap-4 p-2 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                       <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Plan</p>
-                         <code className="text-[10px] font-black text-slate-300">Silver</code>
-                       </div>
-                       <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Email</p>
-                         <code className="text-[10px] font-black text-emerald-400">silver@demo.com</code>
-                       </div>
-                    </div>
-                    <div className="flex gap-4 p-2 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                       <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Plan</p>
-                         <code className="text-[10px] font-black text-amber-400">Gold</code>
-                       </div>
-                       <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Email</p>
-                         <code className="text-[10px] font-black text-emerald-400">gold@demo.com</code>
-                       </div>
-                    </div>
-                    <div className="flex gap-4 p-2 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                       <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Plan</p>
-                         <code className="text-[10px] font-black text-brand-accent">Platinum</code>
-                       </div>
-                       <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Email</p>
-                         <code className="text-[10px] font-black text-emerald-400">platinum@demo.com</code>
-                       </div>
-                    </div>
-                    <div className="text-center pt-1">
-                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Password: <span className="text-emerald-400">DemoAccount123!</span></p>
-                    </div>
-                 </div>
-              </div>
-
               <button 
                 type="submit"
                 disabled={isLoading}
@@ -452,9 +413,6 @@ export default function Login() {
         <div className="pt-8 border-t border-slate-800 text-center">
            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic mb-2">
               Bermasalah dengan akun? <button className="text-emerald-400 hover:underline decoration-2 underline-offset-4">Hubungi Admin</button>
-           </p>
-           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
-              Belum punya akun? <Link to="/register-user" className="text-emerald-400 hover:underline decoration-2 underline-offset-4">Daftar sekarang</Link>
            </p>
         </div>
       </div>
