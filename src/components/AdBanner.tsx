@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { DollarSign } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface AdBannerProps {
   slot?: string;
