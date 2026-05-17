@@ -7,14 +7,21 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function seedPkbm() {
   try {
-    console.log('Inserting school...');
-    const { error: schoolError } = await supabase.from('registrations').insert([{
+    console.log('Inserting into schools...');
+    await supabase.from('schools').insert([{
+        id: 'fallah',
+        name: 'PKBM Nurul Falah',
+        slug: 'fallah',
+        npsn: 'P1234566',
+        status: 'active'
+    }]);
+
+    console.log('Inserting into registrations...');
+    await supabase.from('registrations').insert([{
         school_name: 'PKBM Nurul Falah',
         npsn: 'P1234566',
         status: 'pending'
     }]);
-
-    if (schoolError) throw schoolError;
 
     console.log('School inserted. Signing up user...');
     
