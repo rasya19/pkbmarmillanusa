@@ -22,6 +22,7 @@ interface School {
 interface SchoolContextType {
   school: School | null;
   loading: boolean;
+  isMasterDomain: boolean;
   error: string | null;
   setSchoolBySlug: (slug: string) => Promise<void>;
 }
@@ -30,8 +31,9 @@ const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
 
 export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [school, setSchool] = useState<School | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start loading as true
   const [error, setError] = useState<string | null>(null);
+  const [isMasterDomain, setIsMasterDomain] = useState(false);
   
   const currentSchoolSlugRef = React.useRef<string | null>(null);
 
@@ -44,6 +46,18 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       const hostname = window.location.hostname;
       const baseDomain = 'rsch.my.id'; 
       
+      const isMaster = hostname === baseDomain || 
+                       hostname === `www.${baseDomain}` || 
+                       hostname.includes('localhost') || 
+                       hostname.includes('run.app');
+      
+      setIsMasterDomain(isMaster);
+      
+      if (isMaster) {
+        setLoading(false);
+        return;
+      }
+
       let slug = '';
       let customDomain = '';
 
@@ -52,17 +66,13 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         if (potentialSlug && potentialSlug !== 'www' && potentialSlug !== 'master') {
           slug = potentialSlug;
         }
-      } else if (hostname !== baseDomain && 
-                 hostname !== `www.${baseDomain}` && 
-                 !hostname.includes('localhost') && 
-                 !hostname.includes('run.app')) {
+      } else {
         customDomain = hostname;
       }
 
       if (slug) {
-        setSchoolBySlug(slug);
+        await setSchoolBySlug(slug);
       } else if (customDomain) {
-        setLoading(true);
         try {
           const { data, error } = await supabase
             .from('schools')
@@ -71,20 +81,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             .single();
             
           if (!error && data) {
-            // Check status here as well
             if (data.status !== 'active') {
-              console.log('School inactive');
               setError('Sekolah belum aktif');
               setSchool(null);
             } else {
               setSchool(data as School);
             }
+          } else {
+            setError('Sekolah tidak ditemukan');
           }
         } catch (err) {
           console.error('Custom domain resolution error:', err);
+          setError('Gagal memproses domain');
         } finally {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     };
 
@@ -138,7 +151,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SchoolContext.Provider value={{ school, loading, error, setSchoolBySlug }}>
+    <SchoolContext.Provider value={{ school, loading, isMasterDomain, error, setSchoolBySlug }}>
       {children}
     </SchoolContext.Provider>
   );

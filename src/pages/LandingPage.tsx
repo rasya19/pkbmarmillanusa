@@ -25,7 +25,7 @@ import { cn } from '@/src/lib/utils';
 import AdBanner from '@/src/components/AdBanner';
 
 export default function LandingPage() {
-  const { school, loading, error } = useSchool();
+  const { school, loading, error, isMasterDomain } = useSchool();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [visitorCount, setVisitorCount] = useState<number>(0);
 
@@ -39,7 +39,36 @@ export default function LandingPage() {
     }
   }, []);
 
-  const isMaster = !school;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-brand-bg flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-brand-sidebar border-t-brand-accent rounded-full animate-spin" />
+          <p className="font-black text-brand-sidebar italic uppercase tracking-widest text-[10px]">Memuat Sistem...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not master domain and no school found, show error
+  if (!isMasterDomain && !school) {
+    return (
+      <div className="min-h-screen bg-brand-bg flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-3xl p-12 text-center shadow-2xl border border-brand-border">
+          <ShieldCheck className="w-16 h-16 text-brand-accent mx-auto mb-8" />
+          <h1 className="text-3xl font-black text-brand-sidebar italic uppercase tracking-tighter mb-4">Akses Ditolak</h1>
+          <p className="text-slate-500 font-medium italic mb-8 leading-relaxed">
+            Maaf, sekolah tidak ditemukan atau sudah tidak aktif lagi di jaringan Rasyatech.
+          </p>
+          <a href="https://rsch.my.id" className="inline-block bg-brand-sidebar text-white px-8 py-4 rounded-xl font-black text-xs uppercase tracking-widest italic hover:bg-brand-accent transition-colors">
+            Kembali ke Pusat
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const isMaster = isMasterDomain;
   const schoolName = school?.name || 'Rasyatech';
   const parts = school?.name 
     ? { first: school.name.split(' ')[0], rest: school.name.split(' ').slice(1).join(' ') }
@@ -70,7 +99,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-brand-border z-100 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-             {school?.logoUrl ? (
+             {school?.logoUrl && !isMaster ? (
                 <img 
                   src={school.logoUrl} 
                   alt={school.name} 
@@ -79,28 +108,31 @@ export default function LandingPage() {
                 />
              ) : (
                 <div className="w-11 h-11 bg-brand-sidebar rounded-xl flex items-center justify-center text-brand-accent font-black italic shadow-lg shadow-brand-sidebar/20 group-hover:scale-105 transition-transform">
-                   {parts.first ? parts.first[0] : 'A'}
+                   {parts.first ? parts.first[0] : 'R'}
                 </div>
              )}
              <div className="flex flex-col">
                 <span className="font-black text-brand-sidebar uppercase italic tracking-tighter leading-none text-xl">
-                  {parts.first} <span className="text-brand-accent">{parts.rest}</span>
+                  {isMaster ? 'RASYA' : parts.first} <span className="text-brand-accent">{isMaster ? 'TECH' : parts.rest}</span>
                 </span>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mt-1">Powered by <span className="text-brand-accent">Rasyatech</span></span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mt-1">
+                  {isMaster ? 'POWERED BY RASYATECH' : `Powered by Rasyatech`}
+                </span>
              </div>
           </Link>
           
            {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-8">
-            {isMaster && !loading && (
+            {isMaster && (
               <>
-                {localStorage.getItem('userEmail')?.trim().toLowerCase() === 'ismanto095@gmail.com' && (
+                {(localStorage.getItem('userEmail')?.trim().toLowerCase() === 'ismanto095@gmail.com' ||
+                  localStorage.getItem('userRole') === 'SuperAdmin') && (
                   <Link to="/master-admin" className="text-[11px] font-black text-brand-accent hover:text-brand-sidebar transition-colors uppercase tracking-[0.3em] italic flex items-center gap-2 px-3 py-1 bg-brand-accent/10 rounded-lg">
                     Master Admin <ShieldCheck className="w-4 h-4" />
                   </Link>
                 )}
                 <Link to="/register-school" className="text-[11px] font-black text-brand-sidebar hover:text-brand-accent transition-colors uppercase tracking-widest italic pt-0.5">
-                  Daftar Sekolah Baru
+                  Registrasi Sekolah
                 </Link>
               </>
             )}
@@ -160,7 +192,8 @@ export default function LandingPage() {
                   </a>
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
-                  {isMaster && localStorage.getItem('userEmail')?.toLowerCase() === 'ismanto095@gmail.com' && (
+                  {isMaster && (localStorage.getItem('userEmail')?.trim().toLowerCase() === 'ismanto095@gmail.com' ||
+                                localStorage.getItem('userRole') === 'SuperAdmin') && (
                     <Link 
                       to="/master-admin" 
                       onClick={() => setIsMenuOpen(false)}
@@ -169,13 +202,13 @@ export default function LandingPage() {
                       Master Admin <ShieldCheck className="w-4 h-4" />
                     </Link>
                   )}
-                  {isMaster && !loading && (
+                  {isMaster && (
                     <Link 
                       to="/register-school" 
                       onClick={() => setIsMenuOpen(false)}
                       className="w-full bg-slate-900 text-white py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic mb-1"
                     >
-                      Daftar Sekolah <Rocket className="w-4 h-4 text-brand-accent" />
+                      Registrasi Sekolah <Rocket className="w-4 h-4 text-brand-accent" />
                     </Link>
                   )}
                   {isMaster && !loading && (
@@ -238,14 +271,14 @@ export default function LandingPage() {
                    ? 'Sistem manajemen pendidikan terintegrasi untuk sekolah, PKBM, dan lembaga pendidikan modern di seluruh Indonesia.'
                    : 'Pusat Kegiatan Belajar Masyarakat (PKBM) yang mengutamakan kualitas, fleksibilitas, dan kemajuan teknologi untuk mencerdaskan bangsa Indonesia.'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-12">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-12">
                  <Link to={isMaster ? "/register-school" : "/login"} className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32">
                     {isMaster ? <Rocket className="w-6 h-6 mb-2 text-brand-accent" /> : <Users className="w-6 h-6 mb-2 text-brand-accent" />}
-                    <span>{isMaster ? 'DAFTAR SEKOLAH' : 'LOGIN GURU'}</span>
+                    <span>{isMaster ? 'REGISTRASI SAAS' : 'PORTAL GURU'}</span>
                  </Link>
                  <Link to="/login" className={cn("text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32", isMaster ? "bg-slate-700 shadow-slate-900/40" : "bg-brand-accent shadow-brand-accent/40")}>
                     {isMaster ? <ShieldCheck className="w-6 h-6 mb-2 text-brand-accent" /> : <BookOpen className="w-6 h-6 mb-2 text-brand-sidebar" />}
-                    <span>{isMaster ? 'LOGIN ADMIN' : 'LOGIN SISWA'}</span>
+                    <span>{isMaster ? 'LOGIN ADMIN' : 'PORTAL SISWA'}</span>
                  </Link>
               </div>
            </motion.div>
