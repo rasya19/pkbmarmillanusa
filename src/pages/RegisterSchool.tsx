@@ -19,8 +19,8 @@ export default function RegisterSchool() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.from('pendaftaran_lms').insert([{
-        nama_sekolah: formData.name,
+      const { error } = await supabase.from('registrations').insert([{
+        school_name: formData.name,
         npsn: formData.npsn,
         admin_name: formData.adminName,
         admin_email: formData.adminEmail,

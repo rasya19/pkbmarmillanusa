@@ -8,11 +8,10 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 async function seedPkbm() {
   try {
     console.log('Inserting school...');
-    const { error: schoolError } = await supabase.from('pendaftaran_lms').insert([{
-        nama_sekolah: 'PKBM Nurul Falah',
+    const { error: schoolError } = await supabase.from('registrations').insert([{
+        school_name: 'PKBM Nurul Falah',
         npsn: 'P1234566',
-        alamat: 'Kuningan',
-        slug: 'pkbm-nurul-falah'
+        status: 'pending'
     }]);
 
     if (schoolError) throw schoolError;
