@@ -187,6 +187,7 @@ export default function Login() {
       });
 
       if (error) {
+        console.error('DEBUG [Login] Auth Error:', error);
         throw error;
       }
 
