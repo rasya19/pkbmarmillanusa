@@ -94,7 +94,12 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             
           if (!error && data) {
             console.log('DEBUG [SchoolContext] Found school by custom domain:', data.name);
-            if (data.status !== 'active') {
+            const isStatusActive = data.status?.toLowerCase() === 'active' || 
+                                  data.status === true || 
+                                  data.is_active === true;
+            
+            if (!isStatusActive) {
+              console.warn('DEBUG [SchoolContext] Custom domain school is INACTIVE. Status:', data.status);
               setError('Sekolah belum aktif');
               setSchool(null);
             } else {
@@ -144,12 +149,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (!error && data) {
-        console.log('DEBUG: School data found:', data);
-        if (data.status !== 'active') {
-          console.log('School inactive');
+        console.log('DEBUG [SchoolContext] Found school data:', data);
+        console.log('DEBUG [SchoolContext] School status:', data.status);
+        
+        const isStatusActive = data.status?.toLowerCase() === 'active' || 
+                              data.status === true || 
+                              data.is_active === true;
+
+        if (!isStatusActive) {
+          console.warn('DEBUG [SchoolContext] School is INACTIVE. Status:', data.status);
           setError('Sekolah belum aktif atau belum diverifikasi');
           setSchool(null);
         } else {
+          console.log('DEBUG [SchoolContext] School is ACTIVE');
           setSchool(data as School);
         }
       } else {

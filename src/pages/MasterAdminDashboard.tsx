@@ -151,6 +151,7 @@ export default function MasterAdminDashboard() {
         slug: slugVal,
         npsn: reg.npsn,
         status: 'active',
+        is_active: true, // Added is_active to be safer
         whatsapp: reg.whatsapp
       };
 
