@@ -1,9 +1,11 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Balikin style default yg direset Tailwind v4 */
+/* Balikin style default yg direset Tailwind */
 @layer base {
     * {
-    border-color: theme(colors.gray.200);
+    border-color: #e5e7eb; /* gray-200 */
   }
   
   button {
@@ -11,7 +13,7 @@
   }
   
   a {
-    color: theme(colors.blue.600);
+    color: #2563eb; /* blue-600 */
     text-decoration: inherit;
   }
   
@@ -22,6 +24,6 @@
   
   body {
     @apply bg-white text-gray-900 antialiased;
-    font-family: theme(fontFamily.sans);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
