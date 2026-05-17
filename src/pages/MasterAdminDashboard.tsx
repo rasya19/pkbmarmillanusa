@@ -113,6 +113,7 @@ export default function MasterAdminDashboard() {
   };
 
   const handleApproveSchool = async (reg: Registration) => {
+    console.log('DEBUG [Approval] Initiating for:', reg);
     if (!window.confirm(`Setujui pendaftaran ${reg.school_name}?`)) return;
     
     setProcessingId(reg.id);
@@ -123,30 +124,54 @@ export default function MasterAdminDashboard() {
         .update({ status: 'approved' })
         .eq('id', reg.id);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('DEBUG [Approval] Registration Update Error:', updateError);
+        throw new Error(`Gagal update status: ${updateError.message}`);
+      }
 
-      // 2. Insert into schools table (if not exists)
-      const slugVal = reg.slug || reg.school_name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '');
+      // 2. Slug generation
+      let slugVal = (reg.slug || reg.school_name.toLowerCase().trim()
+        .replace(/[^\w\s-]/g, '') 
+        .replace(/\s+/g, '-')     
+        .replace(/-+/g, '-')).toLowerCase();
       
+      if (!slugVal || slugVal === '-') {
+        slugVal = `school-${Math.random().toString(36).substring(2, 8)}`;
+      }
+
+      console.log('DEBUG [Approval] Slug generated:', slugVal);
+
+      // 3. Upsert into schools table
+      const schoolData = {
+        id: slugVal,
+        name: reg.school_name,
+        slug: slugVal,
+        npsn: reg.npsn,
+        status: 'active',
+        whatsapp: reg.whatsapp
+      };
+
       const { error: schoolError } = await supabase
         .from('schools')
-        .insert([{
-          id: slugVal,
-          name: reg.school_name,
-          slug: slugVal,
-          npsn: reg.npsn,
-          status: 'active'
-        }]);
+        .upsert([schoolData], { onConflict: 'id' });
 
-      if (schoolError && schoolError.code !== '23505') { // Ignore duplicate slug for now
-        throw schoolError;
+      if (schoolError) {
+        console.error('DEBUG [Approval] Schools Upsert Error:', schoolError);
+        // Final fallback try with simple insert if upsert is rejected by policies
+        const { error: insertError } = await supabase
+          .from('schools')
+          .insert([schoolData]);
+          
+        if (insertError && insertError.code !== '23505') {
+          throw new Error(`Gagal buat data sekolah: ${insertError.message}`);
+        }
       }
 
       toast.success(`${reg.school_name} berhasil diaktifkan!`);
       fetchData();
     } catch (error: any) {
-      console.error('Approval error:', error);
-      toast.error('Gagal menyetujui: ' + error.message);
+      console.error('DEBUG [Approval] Fatal Error:', error);
+      toast.error(error.message || 'Error tidak dikenal');
     } finally {
       setProcessingId(null);
     }
