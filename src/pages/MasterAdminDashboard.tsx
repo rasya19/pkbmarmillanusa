@@ -116,27 +116,30 @@ export default function MasterAdminDashboard() {
     console.log('DEBUG [Approval] Initiating for:', reg);
     if (!window.confirm(`Setujui pendaftaran ${reg.school_name}?`)) return;
     
+    // 1. Slug generation (needs to happen first so we can save it)
+    let slugVal = (reg.slug || reg.school_name.toLowerCase().trim()
+      .replace(/[^\w\s-]/g, '') 
+      .replace(/\s+/g, '-')     
+      .replace(/-+/g, '-')).toLowerCase();
+    
+    if (!slugVal || slugVal === '-') {
+      slugVal = `school-${Math.random().toString(36).substring(2, 8)}`;
+    }
+
     setProcessingId(reg.id);
     try {
-      // 1. Update registration status
+      // 2. Update registration status and slug
       const { error: updateError } = await supabase
         .from('registrations')
-        .update({ status: 'approved' })
+        .update({ 
+          status: 'approved',
+          slug: slugVal 
+        })
         .eq('id', reg.id);
       
       if (updateError) {
         console.error('DEBUG [Approval] Registration Update Error:', updateError);
         throw new Error(`Gagal update status: ${updateError.message}`);
-      }
-
-      // 2. Slug generation
-      let slugVal = (reg.slug || reg.school_name.toLowerCase().trim()
-        .replace(/[^\w\s-]/g, '') 
-        .replace(/\s+/g, '-')     
-        .replace(/-+/g, '-')).toLowerCase();
-      
-      if (!slugVal || slugVal === '-') {
-        slugVal = `school-${Math.random().toString(36).substring(2, 8)}`;
       }
 
       console.log('DEBUG [Approval] Slug generated:', slugVal);
@@ -164,6 +167,46 @@ export default function MasterAdminDashboard() {
           
         if (insertError && insertError.code !== '23505') {
           throw new Error(`Gagal buat data sekolah: ${insertError.message}`);
+        }
+      }
+
+      // 4. Create/Update User Profile for the School Admin
+      // This ensures the admin user is associated with their new school
+      if (reg.admin_email) {
+        console.log('DEBUG [Approval] Creating/Updating User Profile for:', reg.admin_email);
+        
+        // Search if profile already exists
+        const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', reg.admin_email.toLowerCase().trim())
+            .single();
+
+        if (existingProfile) {
+            // Update existing profile with new school_id and role Admin
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .update({ 
+                    school_id: slugVal,
+                    role: 'Admin',
+                    nama: reg.admin_name
+                })
+                .eq('id', existingProfile.id);
+            
+            if (profileError) console.error('DEBUG [Approval] Profile Update Error:', profileError);
+        } else {
+            // Create new profile record (auth will be handled by Supabase Auth if they sign up/login)
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .insert([{
+                    email: reg.admin_email.toLowerCase().trim(),
+                    nama: reg.admin_name,
+                    role: 'Admin',
+                    school_id: slugVal,
+                    status: 'active'
+                }]);
+            
+            if (profileError) console.error('DEBUG [Approval] Profile Insert Error:', profileError);
         }
       }
 
