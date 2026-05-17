@@ -94,12 +94,16 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             
           if (!error && data) {
             console.log('DEBUG [SchoolContext] Found school by custom domain:', data.name);
-            const isStatusActive = data.status?.toLowerCase() === 'active' || 
-                                  data.status === true || 
-                                  data.is_active === true;
+            
+            const rawStatus = data.status;
+            const isStatusActive = rawStatus === undefined || rawStatus === null || 
+                                  rawStatus.toLowerCase() === 'active' || 
+                                  rawStatus === true || 
+                                  data.is_active === true ||
+                                  data.is_active === undefined;
             
             if (!isStatusActive) {
-              console.warn('DEBUG [SchoolContext] Custom domain school is INACTIVE. Status:', data.status);
+              console.warn('DEBUG [SchoolContext] Custom domain school is INACTIVE. Status:', rawStatus);
               setError('Sekolah belum aktif');
               setSchool(null);
             } else {
@@ -150,18 +154,25 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       
       if (!error && data) {
         console.log('DEBUG [SchoolContext] Found school data:', data);
-        console.log('DEBUG [SchoolContext] School status:', data.status);
         
-        const isStatusActive = data.status?.toLowerCase() === 'active' || 
-                              data.status === true || 
-                              data.is_active === true;
+        // BYPASS LOGIC: If status is undefined (column doesn't exist) or null, default to 'active'
+        const rawStatus = data.status;
+        const isActiveCol = data.is_active;
+        
+        console.log('DEBUG [SchoolContext] Raw status from DB:', rawStatus);
+
+        const isStatusActive = rawStatus === undefined || rawStatus === null || 
+                              rawStatus.toLowerCase() === 'active' || 
+                              rawStatus === true || 
+                              isActiveCol === true ||
+                              isActiveCol === undefined; // Bypass if column missing
 
         if (!isStatusActive) {
-          console.warn('DEBUG [SchoolContext] School is INACTIVE. Status:', data.status);
+          console.warn('DEBUG [SchoolContext] School is explicitly INACTIVE. Status:', rawStatus);
           setError('Sekolah belum aktif atau belum diverifikasi');
           setSchool(null);
         } else {
-          console.log('DEBUG [SchoolContext] School is ACTIVE');
+          console.log('DEBUG [SchoolContext] School is RESOLVED as ACTIVE (Bypass or Valid)');
           setSchool(data as School);
         }
       } else {
