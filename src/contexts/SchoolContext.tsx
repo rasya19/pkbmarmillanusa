@@ -42,7 +42,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const resolveByHostname = async () => {
       const hostname = window.location.hostname;
-      const baseDomain = 'armillalms.id'; 
+      const baseDomain = 'rsch.my.id'; 
       
       let slug = '';
       let customDomain = '';

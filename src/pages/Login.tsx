@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
+import { useSchool } from '../contexts/SchoolContext';
 import { 
   ShieldCheck, 
   ArrowLeft,
@@ -15,6 +16,7 @@ import { motion } from 'motion/react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { school } = useSchool();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
