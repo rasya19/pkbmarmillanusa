@@ -4,8 +4,8 @@ import {
   MoreVertical, FileText, CheckCircle2, XCircle, Clock, Check, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/src/lib/utils';
-import { supabase } from '@/src/lib/supabase';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface Bills {
