@@ -97,9 +97,9 @@ export default function Layout() {
         // Coba periksa di table profiles (umum) atau table spesifik berdasarkan role jika perlu
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_plan, is_approved')
+          .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (profile) {
           if (profile.subscription_plan) {

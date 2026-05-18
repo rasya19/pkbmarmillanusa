@@ -119,22 +119,26 @@ export default function Login() {
         localStorage.setItem('userEmail', data.user.email || '');
         
         // 1. Try fetch profile by Auth ID
-        const { data: profileById } = await supabase
+        const { data: profileById, error: p1Error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
+        
+        if (p1Error) console.error('DEBUG [Auth] Profile query by ID error:', p1Error);
         
         let profile = profileById;
 
         // 2. Fallback to Email if Not Found by ID (for newly approved admins)
         if (!profile && data.user.email) {
           console.log('DEBUG [Auth] Profile not found by ID, trying Email:', data.user.email);
-          const { data: profileByEmail } = await supabase
+          const { data: profileByEmail, error: p2Error } = await supabase
             .from('profiles')
             .select('*')
             .eq('email', data.user.email.toLowerCase().trim())
-            .single();
+            .maybeSingle();
+          
+          if (p2Error) console.error('DEBUG [Auth] Profile query by Email error:', p2Error);
           
           if (profileByEmail) {
             console.log('DEBUG [Auth] Found profile by Email. Linking to ID:', data.user.id);
@@ -149,16 +153,20 @@ export default function Login() {
           }
         }
         
+        // Priority: Profile Table Role -> Auth Metadata Role -> Fallback Siswa
         let finalRole = profile?.role || profile?.peran || data.user.user_metadata?.role || 'Siswa';
         
-        // Final sanity check for principal email
+        // Final sanity check for principal email (SUPER ADMIN BYPASS)
         if (data.user.email?.toLowerCase() === 'ismanto095@gmail.com') {
           finalRole = 'SuperAdmin';
         }
         
         console.log('DEBUG [Auth] Resolved Role:', finalRole);
         localStorage.setItem('userRole', finalRole);
-        localStorage.setItem('adminName', profile?.nama || profile?.name || 'Master Admin');
+        
+        // Correctly set admin name based on profile
+        const finalAdminName = profile?.nama || profile?.name || data.user.user_metadata?.name || (finalRole === 'SuperAdmin' ? 'Master Admin' : 'Administrator');
+        localStorage.setItem('adminName', finalAdminName);
         if (profile?.school_id) localStorage.setItem('school_id', profile.school_id);
         
         localStorage.removeItem('isDemoMode');

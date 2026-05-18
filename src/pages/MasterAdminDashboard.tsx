@@ -21,6 +21,7 @@ interface Registration {
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   slug?: string;
+  subscription_plan?: 'Silver' | 'Gold' | 'Platinum';
 }
 
 export default function MasterAdminDashboard() {
@@ -150,8 +151,8 @@ export default function MasterAdminDashboard() {
         name: reg.school_name,
         slug: slugVal,
         npsn: reg.npsn,
-        status: 'active',
-        is_active: true, // Added is_active to be safer
+        is_active: true,
+        subscription_plan: reg.subscription_plan || 'Silver',
         whatsapp: reg.whatsapp
       };
 
@@ -190,7 +191,9 @@ export default function MasterAdminDashboard() {
                 .update({ 
                     school_id: slugVal,
                     role: 'Admin',
-                    nama: reg.admin_name
+                    nama: reg.admin_name,
+                    subscription_plan: reg.subscription_plan || 'Silver',
+                    is_approved: true
                 })
                 .eq('id', existingProfile.id);
             
@@ -204,7 +207,8 @@ export default function MasterAdminDashboard() {
                     nama: reg.admin_name,
                     role: 'Admin',
                     school_id: slugVal,
-                    status: 'active'
+                    subscription_plan: reg.subscription_plan || 'Silver',
+                    is_approved: true
                 }]);
             
             if (profileError) console.error('DEBUG [Approval] Profile Insert Error:', profileError);

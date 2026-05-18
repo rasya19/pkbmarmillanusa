@@ -71,9 +71,10 @@ export default function Dashboard() {
   const userRole = localStorage.getItem('userRole') || 'Siswa';
   const isAdmin = userRole === 'Admin' || userRole === 'SuperAdmin';
   const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || (userRole === 'SuperAdmin' ? 'Master Admin' : 'Staf Pengajar');
-  const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
+  const studentName = localStorage.getItem('studentName');
+  const displayName = userRole === 'Siswa' ? (studentName || 'Siswa') : adminName;
   const studentId = localStorage.getItem('studentId');
-  const studentClass = localStorage.getItem('studentClass') || '12 - Paket C';
+  const studentClass = localStorage.getItem('studentClass') || 'Umum';
 
   useEffect(() => {
     if (userRole === 'SuperAdmin' && isMasterDomain) {
@@ -104,7 +105,7 @@ export default function Dashboard() {
   
   // Schedule for current user
   const mySchedule = userRole === 'Siswa' 
-    ? todaySchedule.filter(s => s.kelas.includes(studentClass.split(' ')[0]))
+    ? (studentClass !== 'Umum' ? todaySchedule.filter(s => s.kelas.includes(studentClass.split(' ')[0])) : [])
     : todaySchedule.filter(s => s.guru === adminName || isAdmin);
 
   useEffect(() => {
@@ -281,8 +282,10 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
         <div>
-          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {userRole === 'Siswa' ? studentName : adminName}!</h2>
-          <p className="text-sm font-medium text-emerald-400 mt-1 uppercase tracking-widest">Selamat Datang Kembali.</p>
+          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {displayName}!</h2>
+          <p className="text-sm font-medium text-emerald-400 mt-1 uppercase tracking-widest">
+            {isAdmin ? 'Panel Manajemen Institusi' : (userRole === 'Guru' ? 'Panel Pengajaran' : 'Selamat Belajar Kembali.')}
+          </p>
         </div>
       </div>
 
