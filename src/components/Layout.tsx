@@ -93,8 +93,17 @@ export default function Layout() {
       if (isDemoMode) return;
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // Coba periksa di table profiles (umum) atau table spesifik berdasarkan role jika perlu
+        if (user) {
+          // Double check role bypass for principal emails
+          const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
+          if (user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
+            const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+            console.log('DEBUG [Layout] Principal bypass detected, forcing role:', forcedRole);
+            setRole(forcedRole);
+            localStorage.setItem('userRole', forcedRole);
+          }
+
+          // Coba periksa di table profiles (umum) atau table spesifik berdasarkan role jika perlu
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -187,11 +196,18 @@ export default function Layout() {
   };
 
   // Use school data from context if available, fallback to constants
-  // @ts-ignore
   const schoolDisplayName = school?.name || SCHOOL_NAME;
-  const parts = school?.name 
-    ? { first: school.name.split(' ')[0], rest: school.name.split(' ').slice(1).join(' ') }
-    : getSchoolParts();
+  
+  // Robust branding logic: If school data exists (Slug detected), use it.
+  // Only use Rasyatech as default if we are on the master domain and no school resolved.
+  const isIdentityResolved = !!school?.name;
+  
+  const parts = isIdentityResolved
+    ? { 
+        first: school.name.split(' ')[0], 
+        rest: school.name.split(' ').slice(1).join(' ') 
+      }
+    : (isMasterDomain ? getSchoolParts() : { first: 'Portal', rest: 'Pendidikan' });
 
   const schoolFirst = parts.first;
   const schoolRest = parts.rest;
@@ -457,7 +473,14 @@ export default function Layout() {
                    </span>
                  )}
                </h1>
-               <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] leading-none mt-1.5">By <span className="text-brand-accent">Rasyacomp</span></span>
+               {!isMasterDomain && (
+                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] leading-none mt-1.5">
+                    Institusi <span className="text-brand-accent">Terverifikasi</span>
+                  </span>
+               )}
+               {isMasterDomain && (
+                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] leading-none mt-1.5">By <span className="text-brand-accent">Rasyacomp</span></span>
+               )}
             </div>
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-slate-400">

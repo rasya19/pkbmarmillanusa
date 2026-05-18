@@ -542,9 +542,9 @@ export default function Site() {
                   if (error) throw error;
                   alert('Identitas sekolah berhasil diperbarui!');
                   window.location.reload();
-                } catch (error) {
+                } catch (error: any) {
                   console.error('Update error:', error);
-                  alert('Gagal memperbarui identitas: ' + error);
+                  alert('Gagal memperbarui identitas: ' + (error.message || JSON.stringify(error)));
                 } finally {
                   setIsSavingIdentity(false);
                 }
@@ -730,9 +730,9 @@ export default function Site() {
                   if (error) throw error;
                   alert('Info kontak berhasil diperbarui!');
                   window.location.reload();
-                } catch (error) {
+                } catch (error: any) {
                   console.error('Update error:', error);
-                  alert('Gagal memperbarui kontak: ' + error);
+                  alert('Gagal memperbarui kontak: ' + (error.message || JSON.stringify(error)));
                 } finally {
                   setIsSavingContact(false);
                 }
