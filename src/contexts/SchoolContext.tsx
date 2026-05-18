@@ -52,39 +52,45 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       const isMaster = hostname === 'rsch.my.id' || 
                        hostname === 'www.rsch.my.id' || 
                        hostname.includes('localhost') || 
-                       // Check if it's exactly the base run.app domain without a specific slug
-                       (hostname.includes('run.app') && !hostname.split('.')[0].includes('pkbm'));
+                       // In dev environment, we usually want to resolve a school if we can
+                       (hostname.includes('run.app') && !hostname.split('.')[0].startsWith('pkbm') && !hostname.includes('ais-dev'));
       
       setIsMasterDomain(isMaster);
       
       let slug = '';
       let customDomain = '';
 
-      // Improved slug extraction: find which base domain it ends with
-      let matchedBase = '';
-      for (const b of baseDomains) {
-        if (hostname.endsWith(`.${b}`)) {
-          matchedBase = b;
-          break;
-        }
+      // Improved slug extraction
+      if (hostname.includes('rsch.my.id')) {
+        const parts = hostname.split('.');
+        if (parts.length > 3) slug = parts[0]; // e.g. pkbmxxx.rsch.my.id
+      } else if (hostname.includes('run.app') || hostname.includes('vercel.app')) {
+        // Try to find pkbm in the hostname
+        const match = hostname.match(/pkbm[a-z0-0]+/i);
+        if (match) slug = match[0];
       }
 
-      if (matchedBase) {
-        const prefix = hostname.substring(0, hostname.length - (matchedBase.length + 1));
-        const parts = prefix.split('.');
-        // Slug is usually the last part of the subdomain (e.g. 'pkbmarmillanusa')
-        const detectedSlug = parts[parts.length - 1];
-        
-        if (detectedSlug && !['www', 'master', 'ais-dev', 'ais-pre'].includes(detectedSlug)) {
-          slug = detectedSlug;
-          console.log('DEBUG [SchoolContext] Detected slug from subdomain:', slug, '(Base:', matchedBase, ')');
-        }
-      } else if (!isMaster) {
+      if (!slug && !isMaster) {
         customDomain = hostname;
-        console.log('DEBUG [SchoolContext] Treating as custom domain:', customDomain);
       }
 
-      if (isMaster) {
+      // Check if we already have a session, maybe we can resolve by profile
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user && !slug && !customDomain) {
+        console.log('DEBUG [SchoolContext] No domain resolution, trying user profile...');
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('school_id')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (profile?.school_id) {
+          console.log('DEBUG [SchoolContext] Resolved slug from profile:', profile.school_id);
+          slug = profile.school_id;
+        }
+      }
+
+      if (isMaster && !slug) {
         console.log('DEBUG [SchoolContext] Master domain detected');
         setLoading(false);
         return;
@@ -119,6 +125,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               const mappedData: School = {
                 ...data,
                 accreditation: data.akreditasi || data.accreditation,
+                address: data.alamat || data.address,
                 adminEmail: data.adminEmail || data.admin_email,
                 logoUrl: data.logoUrl || data.logo_url,
                 themeColor: data.themeColor || data.theme_color,
@@ -195,6 +202,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           const mappedData: School = {
             ...data,
             accreditation: data.akreditasi || data.accreditation,
+            address: data.alamat || data.address,
             adminEmail: data.adminEmail || data.admin_email,
             logoUrl: data.logoUrl || data.logo_url,
             themeColor: data.themeColor || data.theme_color,

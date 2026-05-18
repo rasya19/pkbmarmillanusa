@@ -534,9 +534,10 @@ export default function Site() {
                     .from('schools')
                     .update({
                       name: identityForm.name,
+                      nama: identityForm.name, // Try both if possible, or just be safe
                       npsn: identityForm.npsn,
                       akreditasi: identityForm.accreditation,
-                      address: identityForm.address,
+                      alamat: identityForm.address,
                       logo_url: identityForm.logoUrl
                     })
                     .eq('id', school.id);
@@ -723,7 +724,7 @@ export default function Site() {
                   const { error } = await supabase
                     .from('schools')
                     .update({
-                      address: identityForm.address,
+                      alamat: identityForm.address,
                       whatsapp: identityForm.whatsapp,
                       admin_email: identityForm.email
                     })
