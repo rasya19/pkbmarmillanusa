@@ -43,6 +43,7 @@ export default function LandingPage() {
   const address = school?.address || 'Jl. Raya No. 123, Indonesia';
   const phone = school?.whatsapp || '+62 852-2502-5555';
   const email = school?.adminEmail || 'admin@armillanusa.com';
+  const consultationLink = localStorage.getItem('school_consultation_link') || `https://wa.me/${phone.replace(/[^0-9]/g, '')}`;
 
   const navLinks = [
     { name: 'Tentang Kami', href: '#tentang-kami' },
@@ -337,7 +338,7 @@ export default function LandingPage() {
                <h4 className="font-bold text-brand-sidebar uppercase text-xs tracking-widest italic">Link Cepat</h4>
                <ul className="text-[10px] text-slate-500 font-bold space-y-2 uppercase italic">
                   <li><Link to="/login" className="hover:text-brand-accent">Portal Login</Link></li>
-                  <li><a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} className="hover:text-brand-accent">Layanan Pengaduan</a></li>
+                  <li><a href={consultationLink} target="_blank" rel="noopener noreferrer" className="hover:text-brand-accent">Layanan Pengaduan</a></li>
                </ul>
             </div>
          </div>
@@ -352,7 +353,7 @@ export default function LandingPage() {
 
       {/* Floating Action Button */}
       <a 
-        href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
+        href={consultationLink}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-8 right-8 bg-brand-sidebar text-white p-4 rounded-full shadow-2xl z-50 hover:scale-110 transition-all flex items-center gap-2 group"
