@@ -548,19 +548,39 @@ export default function Site() {
                 if (!school) return;
                 setIsSavingIdentity(true);
                 try {
+                  // Primary attempt with all columns
                   const { error } = await supabase
                     .from('schools')
                     .update({
                       name: identityForm.name,
-                      nama: identityForm.name, // Try both if possible, or just be safe
+                      nama: identityForm.name, 
                       npsn: identityForm.npsn,
                       akreditasi: identityForm.accreditation,
+                      accreditation: identityForm.accreditation,
                       alamat: identityForm.address,
-                      logo_url: identityForm.logoUrl
+                      address: identityForm.address,
+                      logo_url: identityForm.logoUrl,
+                      logoUrl: identityForm.logoUrl
                     })
                     .eq('id', school.id);
-                  if (error) throw error;
-                  alert('Identitas sekolah berhasil diperbarui!');
+                  
+                  if (error) {
+                    console.warn('First update attempt failed, trying fallback (omitting possibly missing columns):', error);
+                    // Fallback attempt: only columns we are fairly sure about
+                    const { error: fallbackError } = await supabase
+                      .from('schools')
+                      .update({
+                        name: identityForm.name,
+                        npsn: identityForm.npsn,
+                        logo_url: identityForm.logoUrl
+                      })
+                      .eq('id', school.id);
+                    
+                    if (fallbackError) throw fallbackError;
+                    alert('Identitas sekolah diperbarui sebagian (Beberapa kolom seperti Akreditasi/Alamat mungkin belum ada di database Anda).');
+                  } else {
+                    alert('Identitas sekolah berhasil diperbarui!');
+                  }
                   window.location.reload();
                 } catch (error: any) {
                   console.error('Update error:', error);
@@ -770,12 +790,26 @@ export default function Site() {
                     .from('schools')
                     .update({
                       alamat: identityForm.address,
+                      address: identityForm.address,
                       whatsapp: identityForm.whatsapp,
-                      admin_email: identityForm.email
+                      admin_email: identityForm.email,
+                      adminEmail: identityForm.email
                     })
                     .eq('id', school.id);
-                  if (error) throw error;
-                  alert('Info kontak berhasil diperbarui!');
+                  
+                  if (error) {
+                    console.warn('Primary contact update failed, trying fallback:', error);
+                    const { error: fError } = await supabase
+                      .from('schools')
+                      .update({
+                        whatsapp: identityForm.whatsapp,
+                      })
+                      .eq('id', school.id);
+                    if (fError) throw fError;
+                    alert('Kontak diperbarui sebagian (Kolom Alamat/Email mungkin belum ada).');
+                  } else {
+                    alert('Info kontak berhasil diperbarui!');
+                  }
                   window.location.reload();
                 } catch (error: any) {
                   console.error('Update error:', error);
