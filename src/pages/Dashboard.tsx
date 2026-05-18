@@ -78,7 +78,7 @@ export default function Dashboard() {
   if (userRole === 'Siswa') {
     displayName = studentName || 'Siswa';
   } else if (userRole === 'SuperAdmin') {
-    displayName = adminName || 'Master Admin';
+    displayName = adminName || 'Admin';
   } else if (userRole === 'Admin') {
     displayName = adminName || 'Administrator';
   } else if (userRole === 'Guru') {
@@ -87,12 +87,6 @@ export default function Dashboard() {
   
   const studentId = localStorage.getItem('studentId');
   const studentClass = localStorage.getItem('studentClass') || 'Umum';
-
-  useEffect(() => {
-    if (userRole === 'SuperAdmin' && isMasterDomain) {
-      navigate('/master-admin');
-    }
-  }, [userRole, isMasterDomain, navigate]);
 
   const [studentResults, setStudentResults] = useState<any[]>([]);
   const [studentProfile, setStudentProfile] = useState<any>(null);

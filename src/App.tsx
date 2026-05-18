@@ -50,7 +50,6 @@ import Presensi from './pages/Presensi';
 import AgendaGuru from './pages/AgendaGuru';
 import PresensiSiswa from './pages/PresensiSiswa';
 import AffiliateDashboard from './pages/AffiliateDashboard';
-import MasterAdminDashboard from './pages/MasterAdminDashboard';
 import { toast, Toaster } from 'sonner';
 
 function GuestGuard({ children }: { children: React.ReactNode }) {
@@ -173,9 +172,7 @@ function AppContent() {
       <Route path="/ujian/:id" element={<UjianSiswa />} />
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
-      <Route path="/master-admin" element={<MasterAdminDashboard />} />
       <Route path="/pending-activation" element={<PendingActivation />} />
-      <Route path="/register-school" element={<RegisterSchool />} />
       <Route path="/register-user" element={<RegisterUser />} />
       
       {/* If subdomain/custom domain is detected, allow accessing dashboard routes at root */}

@@ -209,7 +209,7 @@ export default function Login() {
         const finalAdminName = profile?.nama || 
                                profile?.name || 
                                data.user.user_metadata?.name || 
-                               (finalRole === 'SuperAdmin' ? 'Master Admin' : 
+                               (finalRole === 'SuperAdmin' ? 'Administrator' : 
                                (data.user.email === 'pkbmarmillanusa@gmail.com' ? 'Admin PKBM Armilla Nusa' : 'Administrator'));
         
         localStorage.setItem('adminName', finalAdminName);

@@ -2,5 +2,5 @@
   "name": "PKBM Armilla Nusa",
   "description": "Platform Manajemen Pembelajaran Terpadu untuk PKBM Armilla Nusa.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
