@@ -264,7 +264,6 @@ function AppContent() {
         <Route path="/data-siswa" element={<DataSiswa />} />
         <Route path="/data-guru" element={<Guru />} />
         <Route path="/keuangan/tagihan" element={<Tagihan />} />
-        <Route path="*" element={<ComingSoon />} />
       </Route>
 
       <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
@@ -304,6 +303,7 @@ function AppContent() {
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<ComingSoon />} />
       </Route>
+      <Route path="*" element={<ComingSoon />} />
     </Routes>
   );
 }

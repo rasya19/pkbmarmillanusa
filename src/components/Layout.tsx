@@ -95,8 +95,12 @@ export default function Layout() {
       const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           // Double check role bypass for principal emails
+          // ONLY apply this if we are not already in a Guru/Siswa session to avoid overwriting them
+          const currentRole = localStorage.getItem('userRole');
+          const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
+          
           const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
-          if (user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
+          if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
             const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
             console.log('DEBUG [Layout] Principal bypass detected, forcing role:', forcedRole);
             setRole(forcedRole);
@@ -121,10 +125,10 @@ export default function Layout() {
     fetchProfile();
   }, []);
 
-  // Redirect if not approved (Only for Admin/SuperAdmin)
+  // Redirect if not approved (Only for Admin - SuperAdmin is exempt)
   useEffect(() => {
-    const isAdmin = role === 'Admin' || role === 'SuperAdmin';
-    if (isAdmin && isApproved === false && location.pathname !== '/pending-activation') {
+    const isAdminOnly = role === 'Admin';
+    if (isAdminOnly && isApproved === false && location.pathname !== '/pending-activation') {
       navigate('/pending-activation');
     }
   }, [isApproved, location.pathname, navigate, role]);

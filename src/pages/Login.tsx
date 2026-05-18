@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 import { useSchool } from '../contexts/SchoolContext';
@@ -10,25 +10,31 @@ import {
   Lock,
   Mail,
   Eye,
-  EyeOff
+  EyeOff,
+  Users,
+  UserPlus
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { school, error, isMasterDomain } = useSchool();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
-  // Set initial login role based on domain
+  // Set initial login role based on state or domain
   const [loginRole, setLoginRole] = useState<'Admin' | 'Guru' | 'Siswa' | 'Tamu'>('Admin');
 
   useEffect(() => {
-    if (isMasterDomain) {
+    // Priority: State from Navigation -> isMasterDomain check
+    if (location.state?.role) {
+      setLoginRole(location.state.role);
+    } else if (isMasterDomain) {
       setLoginRole('Admin');
     }
-  }, [isMasterDomain]);
+  }, [isMasterDomain, location.state]);
 
   // Handle school-level errors (tenant inactive/not found)
   useEffect(() => {
@@ -252,50 +258,48 @@ export default function Login() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
           
           <div className="relative z-10">
-            {!isMasterDomain && (
-              <div className="flex bg-slate-900 p-1 rounded-2xl border border-slate-700 mb-8 overflow-x-auto">
-                <button 
-                  type="button"
-                  onClick={() => setLoginRole('Admin')}
-                  className={cn(
-                    "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                    loginRole === 'Admin' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  Admin
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setLoginRole('Guru')}
-                  className={cn(
-                    "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                    loginRole === 'Guru' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  Guru
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setLoginRole('Siswa')}
-                  className={cn(
-                    "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                    loginRole === 'Siswa' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  Siswa
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setLoginRole('Tamu')}
-                  className={cn(
-                    "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                    loginRole === 'Tamu' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  Tamu
-                </button>
-              </div>
-            )}
+            <div className="flex bg-slate-900 p-1 rounded-2xl border border-slate-700 mb-8 overflow-x-auto">
+              <button 
+                type="button"
+                onClick={() => setLoginRole('Admin')}
+                className={cn(
+                  "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  loginRole === 'Admin' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                Admin
+              </button>
+              <button 
+                type="button"
+                onClick={() => setLoginRole('Guru')}
+                className={cn(
+                  "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  loginRole === 'Guru' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                Guru
+              </button>
+              <button 
+                type="button"
+                onClick={() => setLoginRole('Siswa')}
+                className={cn(
+                  "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  loginRole === 'Siswa' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                Siswa
+              </button>
+              <button 
+                type="button"
+                onClick={() => setLoginRole('Tamu')}
+                className={cn(
+                  "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  loginRole === 'Tamu' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                Tamu
+              </button>
+            </div>
 
             {loginRole === 'Tamu' ? (
               <div className="text-center py-4">

@@ -93,7 +93,7 @@ export default function LandingPage() {
                 {link.name}
               </a>
             ))}
-            <Link to="/login" className="bg-brand-sidebar text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent hover:scale-105 transition-all shadow-xl shadow-brand-sidebar/20 italic">
+            <Link to="/login" state={{ role: 'Admin' }} className="bg-brand-sidebar text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent hover:scale-105 transition-all shadow-xl shadow-brand-sidebar/20 italic">
               Portal Masuk
             </Link>
           </div>
@@ -129,6 +129,7 @@ export default function LandingPage() {
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
                   <Link 
                     to="/login" 
+                    state={{ role: 'Admin' }}
                     onClick={() => setIsMenuOpen(false)}
                     className="w-full bg-brand-sidebar text-white py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic"
                   >
@@ -168,15 +169,15 @@ export default function LandingPage() {
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12">
-                 <Link to="/login" className="bg-brand-sidebar text-white p-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 flex flex-col items-center justify-center gap-3 group/btn hover:scale-105 transition-all italic border border-white/10">
+                 <Link to="/login" state={{ role: 'Admin' }} className="bg-brand-sidebar text-white p-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 flex flex-col items-center justify-center gap-3 group/btn hover:scale-105 transition-all italic border border-white/10">
                     <ShieldCheck className="w-6 h-6 text-brand-accent" />
                     <span>PORTAL ADMIN</span>
                  </Link>
-                 <Link to="/login" className="bg-brand-sidebar text-white p-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 flex flex-col items-center justify-center gap-3 group/btn hover:scale-105 transition-all italic border border-white/10">
+                 <Link to="/login" state={{ role: 'Guru' }} className="bg-brand-sidebar text-white p-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 flex flex-col items-center justify-center gap-3 group/btn hover:scale-105 transition-all italic border border-white/10">
                     <Users className="w-6 h-6 text-brand-accent" />
                     <span>PORTAL GURU</span>
                  </Link>
-                 <Link to="/login" className="bg-brand-accent text-white p-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-accent/20 flex flex-col items-center justify-center gap-3 group/btn hover:scale-105 transition-all italic border border-white/10">
+                 <Link to="/login" state={{ role: 'Siswa' }} className="bg-brand-accent text-white p-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-accent/20 flex flex-col items-center justify-center gap-3 group/btn hover:scale-105 transition-all italic border border-white/10">
                     <BookOpen className="w-6 h-6 text-brand-sidebar" />
                     <span>PORTAL SISWA</span>
                  </Link>
@@ -337,7 +338,7 @@ export default function LandingPage() {
             <div className="space-y-4">
                <h4 className="font-bold text-brand-sidebar uppercase text-xs tracking-widest italic">Link Cepat</h4>
                <ul className="text-[10px] text-slate-500 font-bold space-y-2 uppercase italic">
-                  <li><Link to="/login" className="hover:text-brand-accent">Portal Login</Link></li>
+                  <li><Link to="/login" state={{ role: 'Admin' }} className="hover:text-brand-accent">Portal Login</Link></li>
                   <li><a href={consultationLink} target="_blank" rel="noopener noreferrer" className="hover:text-brand-accent">Layanan Pengaduan</a></li>
                </ul>
             </div>
