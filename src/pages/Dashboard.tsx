@@ -294,8 +294,11 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
         <div>
-          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {displayName}!</h2>
-          <p className="text-sm font-medium text-emerald-400 mt-1 uppercase tracking-widest">
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {displayName}!</h2>
+            {school?.name && <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase rounded-lg italic">@ {school.name}</span>}
+          </div>
+          <p className="text-sm font-medium text-emerald-400 uppercase tracking-widest">
             {isAdmin ? 'Panel Manajemen Institusi' : (userRole === 'Guru' ? 'Panel Pengajaran' : 'Selamat Belajar Kembali.')}
           </p>
         </div>

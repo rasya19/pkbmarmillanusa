@@ -124,6 +124,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               // Map DB snake_case columns to camelCase interface
               const mappedData: School = {
                 ...data,
+                id: data.id || data.slug, // Ensure we have an ID for updates
+                name: data.nama || data.name,
                 accreditation: data.akreditasi || data.accreditation,
                 address: data.alamat || data.address,
                 adminEmail: data.adminEmail || data.admin_email,
@@ -201,6 +203,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           // Map DB snake_case columns to camelCase interface
           const mappedData: School = {
             ...data,
+            id: data.id || data.slug, // Ensure we have an ID for updates
+            name: data.nama || data.name,
             accreditation: data.akreditasi || data.accreditation,
             address: data.alamat || data.address,
             adminEmail: data.adminEmail || data.admin_email,

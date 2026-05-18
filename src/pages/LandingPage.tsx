@@ -93,6 +93,9 @@ export default function LandingPage() {
     { name: 'Kontak', href: '#kontak' },
   ];
 
+  const heroHeadline = !isMaster ? (localStorage.getItem('school_hero_headline') || 'MEMBANGUN MASA DEPAN TANPA BATAS.') : '';
+  const heroSub = !isMaster ? (localStorage.getItem('school_hero_sub') || 'Pusat Kegiatan Belajar Masyarakat (PKBM) yang mengutamakan kualitas, fleksibilitas, dan kemajuan teknologi untuk mencerdaskan bangsa Indonesia.') : '';
+
   return (
     <div className="bg-white font-sans selection:bg-brand-accent selection:text-white scroll-smooth relative">
       {/* Navigation */}
@@ -251,7 +254,7 @@ export default function LandingPage() {
                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                  {isMaster ? 'SMART LEARNING ECOSYSTEM' : `TERAKREDITASI ${accreditation}`}
               </div>
-              <h1 className="text-6xl md:text-8xl font-black text-brand-sidebar leading-[0.85] tracking-tighter italic mb-10 group">
+              <h1 className="text-6xl md:text-8xl font-black text-brand-sidebar leading-[0.85] tracking-tighter italic mb-10 group whitespace-pre-line">
                 {isMaster ? (
                   <>
                     DIGITAL <br />
@@ -259,17 +262,15 @@ export default function LandingPage() {
                     <span className="text-brand-accent group-hover:text-brand-sidebar transition-colors duration-500">PLATFORM.</span>
                   </>
                 ) : (
-                  <>
-                    MEMBANGUN <br />
-                    MASA DEPAN <br />
-                    <span className="text-brand-accent group-hover:text-brand-sidebar transition-colors duration-500">TANPA BATAS.</span>
-                  </>
+                  <span className="text-brand-sidebar group-hover:text-brand-accent transition-colors duration-500">
+                    {heroHeadline}
+                  </span>
                 )}
               </h1>
               <p className="text-xl text-slate-500 font-medium italic mb-12 max-w-xl leading-relaxed">
                 {isMaster 
                    ? 'Sistem manajemen pendidikan terintegrasi untuk sekolah, PKBM, dan lembaga pendidikan modern di seluruh Indonesia.'
-                   : 'Pusat Kegiatan Belajar Masyarakat (PKBM) yang mengutamakan kualitas, fleksibilitas, dan kemajuan teknologi untuk mencerdaskan bangsa Indonesia.'}
+                   : heroSub}
               </p>
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-12">
                  <Link to={isMaster ? "/register-school" : "/login"} className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32">

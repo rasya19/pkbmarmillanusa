@@ -170,6 +170,17 @@ export default function Site() {
     setShowForm(true);
   };
 
+  const [heroForm, setHeroForm] = useState({
+    headline: localStorage.getItem('school_hero_headline') || 'BIKIN MASA DEPANMU CERAH BERSAMA PKBM ARMILLA NUSA',
+    subHeadline: localStorage.getItem('school_hero_sub') || 'Sekolah fleksibel untuk semua kalangan. Terakreditasi dan ijazah resmi pemerintah.'
+  });
+
+  const handleUpdateHero = () => {
+    localStorage.setItem('school_hero_headline', heroForm.headline);
+    localStorage.setItem('school_hero_sub', heroForm.subHeadline);
+    alert('Konten spanduk utama berhasil diperbarui!');
+  };
+
   /**
    * Site State Management for Profile, Programs, Partnerships and Contact
    */
@@ -452,7 +463,8 @@ export default function Site() {
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Headline</label>
                 <textarea 
                   className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none h-20 resize-none"
-                  defaultValue="BIKIN MASA DEPANMU CERAH BERSAMA PKBM ARMILLA NUSA"
+                  value={heroForm.headline}
+                  onChange={(e) => setHeroForm({...heroForm, headline: e.target.value})}
                 />
               </div>
               <div className="space-y-1">
@@ -460,10 +472,16 @@ export default function Site() {
                 <input 
                   type="text"
                   className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none"
-                  defaultValue="Sekolah fleksibel untuk semua kalangan. Terakreditasi dan ijazah resmi pemerintah."
+                  value={heroForm.subHeadline}
+                  onChange={(e) => setHeroForm({...heroForm, subHeadline: e.target.value})}
                 />
               </div>
-              <button className="bg-brand-sidebar text-white px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-105 transition-all italic">Update Konten</button>
+              <button 
+                onClick={handleUpdateHero}
+                className="bg-brand-sidebar text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-105 transition-all italic"
+              >
+                Update Konten
+              </button>
             </div>
             
             <div className="absolute right-0 top-0 w-1/2 h-full bg-slate-50 border-l border-brand-border translate-x-1/2 rotate-12 group-hover:rotate-6 transition-all duration-700 -z-0" />
@@ -564,7 +582,7 @@ export default function Site() {
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">Ubah angka capaian di halaman depan</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                {stats.map((stat: any, i: number) => (
                  <div key={i} className="space-y-1.5">
                     <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">{stat.label}</label>
@@ -581,6 +599,15 @@ export default function Site() {
                  </div>
                ))}
             </div>
+            <button 
+              onClick={() => {
+                localStorage.setItem('school_stats', JSON.stringify(stats));
+                alert('Statistik profil berhasil diperbarui!');
+              }}
+              className="bg-brand-sidebar text-white px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-105 transition-all italic"
+            >
+              Simpan Statistik
+            </button>
           </div>
 
           <div className="bg-white border border-brand-border rounded-[2rem] p-8 shadow-sm">
@@ -596,7 +623,7 @@ export default function Site() {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                {facilities.map((f: any, i: number) => (
                  <div key={i} className="p-4 bg-slate-50 border border-brand-border rounded-2xl relative group">
                     <button 
@@ -634,6 +661,15 @@ export default function Site() {
                  </div>
                ))}
             </div>
+            <button 
+              onClick={() => {
+                localStorage.setItem('school_facilities', JSON.stringify(facilities));
+                alert('Daftar fasilitas berhasil diperbarui!');
+              }}
+              className="bg-brand-sidebar text-white px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-105 transition-all italic"
+            >
+              Simpan Fasilitas
+            </button>
           </div>
 
           <div className="bg-white border border-brand-border rounded-[2rem] p-8 shadow-sm">
@@ -649,7 +685,7 @@ export default function Site() {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 mb-6">
                {programs.map((prog: any, i: number) => (
                  <div key={i} className="p-4 bg-slate-50 border border-brand-border rounded-2xl relative group">
                     <button 
@@ -679,6 +715,15 @@ export default function Site() {
                  </div>
                ))}
             </div>
+            <button 
+              onClick={() => {
+                localStorage.setItem('school_programs', JSON.stringify(programs));
+                alert('Daftar program unggulan berhasil diperbarui!');
+              }}
+              className="bg-brand-sidebar text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-105 transition-all italic"
+            >
+              Simpan Program
+            </button>
           </div>
 
           <div className="bg-white border border-brand-border rounded-[2rem] p-8 shadow-sm">
