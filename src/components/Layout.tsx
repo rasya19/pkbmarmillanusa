@@ -121,12 +121,13 @@ export default function Layout() {
     fetchProfile();
   }, []);
 
-  // Redirect if not approved
+  // Redirect if not approved (Only for Admin/SuperAdmin)
   useEffect(() => {
-    if (isApproved === false && location.pathname !== '/pending-activation') {
+    const isAdmin = role === 'Admin' || role === 'SuperAdmin';
+    if (isAdmin && isApproved === false && location.pathname !== '/pending-activation') {
       navigate('/pending-activation');
     }
-  }, [isApproved, location.pathname, navigate]);
+  }, [isApproved, location.pathname, navigate, role]);
 
   // URL Guard for Tamu/Guest Role & Subscription Plan
   useEffect(() => {

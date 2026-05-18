@@ -122,7 +122,7 @@ function SchoolLoader() {
       <div className="space-y-4">
         <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">Portal Tidak Ditemukan</h2>
         <p className="text-xs text-slate-500">Sekolah atau institusi yang anda cari belum terdaftar atau portal sedang dalam proses setup.</p>
-        <a href="/register-school" className="inline-block mt-4 bg-brand-sidebar text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest">Daftar Sekolah</a>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4 italic">Silakan hubungi tim dukungan Rasyatech.</p>
       </div>
     </div>
   );

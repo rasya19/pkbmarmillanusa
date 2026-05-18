@@ -217,11 +217,7 @@ export default function Login() {
         
         localStorage.removeItem('isDemoMode');
         
-        if (finalRole === 'SuperAdmin' && isMasterDomain) {
-          navigate('/master-admin');
-        } else {
-          navigate('/dashboard');
-        }
+        navigate('/dashboard');
       }
     } catch (error: any) {
       console.error('DEBUG [Auth] Final Catch:', error.message);
