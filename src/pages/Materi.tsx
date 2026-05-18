@@ -67,9 +67,14 @@ export default function Materi() {
       setIsLoading(true);
       const { data, error } = await supabase.from('materi_ajar').select('*').order('created_at', { ascending: false });
       
-      if (error && !error.message.includes('Could not find the table')) {
-        console.error('Error fetching materi:', error);
-        return;
+      if (error) {
+        console.error('DEBUG [Materi] Fetch error:', error.message);
+        // Fallback for missing table or permissions
+        if (error.code === 'PGRST116' || error.message.includes('find') || error.message.includes('exist')) {
+           console.log('DEBUG [Materi] Table not found or inaccessible, showing empty state.');
+           setMateriList([]);
+           return;
+        }
       }
 
       if (data && data.length > 0) {

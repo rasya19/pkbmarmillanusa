@@ -119,53 +119,91 @@ export default function Login() {
         localStorage.setItem('userEmail', data.user.email || '');
         
         // 1. Try fetch profile by Auth ID
-        const { data: profileById, error: p1Error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .maybeSingle();
-        
-        if (p1Error) console.error('DEBUG [Auth] Profile query by ID error:', p1Error);
+        let profileById = null;
+        try {
+          const { data: pData, error: p1Error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .maybeSingle();
+          
+          if (p1Error) {
+            console.error('DEBUG [Auth] Profile query by ID error:', p1Error);
+            // If 406/400, try a more minimal select
+            if (p1Error.code === 'PGRST106' || p1Error.message.includes('Accept')) {
+               console.log('DEBUG [Auth] Attempting minimal select for profiles...');
+               const { data: minData } = await supabase
+                 .from('profiles')
+                 .select('id, role, school_id, nama')
+                 .eq('id', data.user.id)
+                 .maybeSingle();
+               profileById = minData;
+            }
+          } else {
+            profileById = pData;
+          }
+        } catch (e) {
+          console.error('DEBUG [Auth] Profiles query crashed:', e);
+        }
         
         let profile = profileById;
 
         // 2. Fallback to Email if Not Found by ID (for newly approved admins)
         if (!profile && data.user.email) {
           console.log('DEBUG [Auth] Profile not found by ID, trying Email:', data.user.email);
-          const { data: profileByEmail, error: p2Error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('email', data.user.email.toLowerCase().trim())
-            .maybeSingle();
-          
-          if (p2Error) console.error('DEBUG [Auth] Profile query by Email error:', p2Error);
-          
-          if (profileByEmail) {
-            console.log('DEBUG [Auth] Found profile by Email. Linking to ID:', data.user.id);
-            profile = profileByEmail;
-            // Link the profile to the Auth ID for future efficient lookups
-            const { error: linkError } = await supabase
+          try {
+            const { data: profileByEmail, error: p2Error } = await supabase
               .from('profiles')
-              .update({ id: data.user.id })
-              .eq('email', data.user.email.toLowerCase().trim());
+              .select('*')
+              .eq('email', data.user.email.toLowerCase().trim())
+              .maybeSingle();
             
-            if (linkError) console.error('DEBUG [Auth] Failed to link profile ID:', linkError);
+            if (p2Error) console.error('DEBUG [Auth] Profile query by Email error:', p2Error);
+            
+            if (profileByEmail) {
+              console.log('DEBUG [Auth] Found profile by Email. Linking to ID:', data.user.id);
+              profile = profileByEmail;
+              // Link the profile to the Auth ID for future efficient lookups
+              await supabase
+                .from('profiles')
+                .update({ id: data.user.id })
+                .eq('email', data.user.email.toLowerCase().trim());
+            }
+          } catch (e) {
+            console.error('DEBUG [Auth] Profile email fallback crashed:', e);
           }
         }
         
         // Priority: Profile Table Role -> Auth Metadata Role -> Fallback Siswa
         let finalRole = profile?.role || profile?.peran || data.user.user_metadata?.role || 'Siswa';
         
-        // Final sanity check for principal email (SUPER ADMIN BYPASS)
-        if (data.user.email?.toLowerCase() === 'ismanto095@gmail.com') {
-          finalRole = 'SuperAdmin';
+        // Final sanity check for administrative emails (BYPASS for identified owners/admins)
+        const principalEmails = [
+          'ismanto095@gmail.com', 
+          'pkbmarmillanusa@gmail.com', 
+          'armillanusa@gmail.com'
+        ];
+        
+        if (data.user.email && principalEmails.includes(data.user.email.toLowerCase().trim())) {
+          if (data.user.email.toLowerCase().trim() === 'ismanto095@gmail.com') {
+            finalRole = 'SuperAdmin';
+          } else {
+            // Guarantee Admin role for institutional email
+            finalRole = 'Admin';
+          }
+          console.log('DEBUG [Auth] Principal Email Bypass Triggered. Forced Role:', finalRole);
         }
         
         console.log('DEBUG [Auth] Resolved Role:', finalRole);
         localStorage.setItem('userRole', finalRole);
         
-        // Correctly set admin name based on profile
-        const finalAdminName = profile?.nama || profile?.name || data.user.user_metadata?.name || (finalRole === 'SuperAdmin' ? 'Master Admin' : 'Administrator');
+        // Correctly set admin name based on profile, metadata, or role
+        const finalAdminName = profile?.nama || 
+                               profile?.name || 
+                               data.user.user_metadata?.name || 
+                               (finalRole === 'SuperAdmin' ? 'Master Admin' : 
+                               (data.user.email === 'pkbmarmillanusa@gmail.com' ? 'Admin PKBM Armilla Nusa' : 'Administrator'));
+        
         localStorage.setItem('adminName', finalAdminName);
         if (profile?.school_id) localStorage.setItem('school_id', profile.school_id);
         

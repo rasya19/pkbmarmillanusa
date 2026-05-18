@@ -44,42 +44,50 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const resolveByHostname = async () => {
       const hostname = window.location.hostname.toLowerCase().trim();
-      const baseDomain = 'rsch.my.id'; 
+      // Expanded list of base domains to handle .my.id and .rsch.my.id properly
+      const baseDomains = ['rsch.my.id', 'my.id', 'vercel.app', 'run.app', 'web.app'];
       
       console.log('DEBUG [SchoolContext] Resolving hostname:', hostname);
       
-      const isMaster = hostname === baseDomain || 
-                       hostname === `www.${baseDomain}` || 
+      const isMaster = hostname === 'rsch.my.id' || 
+                       hostname === 'www.rsch.my.id' || 
                        hostname.includes('localhost') || 
-                       hostname.includes('run.app') ||
-                       hostname.includes('web.app') ||
-                       hostname.includes('vercel.app');
+                       // Check if it's exactly the base run.app domain without a specific slug
+                       (hostname.includes('run.app') && !hostname.split('.')[0].includes('pkbm'));
       
       setIsMasterDomain(isMaster);
       
+      let slug = '';
+      let customDomain = '';
+
+      // Improved slug extraction: find which base domain it ends with
+      let matchedBase = '';
+      for (const b of baseDomains) {
+        if (hostname.endsWith(`.${b}`)) {
+          matchedBase = b;
+          break;
+        }
+      }
+
+      if (matchedBase) {
+        const prefix = hostname.substring(0, hostname.length - (matchedBase.length + 1));
+        const parts = prefix.split('.');
+        // Slug is usually the last part of the subdomain (e.g. 'pkbmarmillanusa')
+        const detectedSlug = parts[parts.length - 1];
+        
+        if (detectedSlug && !['www', 'master', 'ais-dev', 'ais-pre'].includes(detectedSlug)) {
+          slug = detectedSlug;
+          console.log('DEBUG [SchoolContext] Detected slug from subdomain:', slug, '(Base:', matchedBase, ')');
+        }
+      } else if (!isMaster) {
+        customDomain = hostname;
+        console.log('DEBUG [SchoolContext] Treating as custom domain:', customDomain);
+      }
+
       if (isMaster) {
         console.log('DEBUG [SchoolContext] Master domain detected');
         setLoading(false);
         return;
-      }
-
-      let slug = '';
-      let customDomain = '';
-
-      if (hostname.endsWith(`.${baseDomain}`)) {
-        // Extract subdomain parts
-        const prefix = hostname.substring(0, hostname.length - (baseDomain.length + 1));
-        const parts = prefix.split('.');
-        // Take the last part as the slug (e.g., from 'www.pkbmarmillanusa', take 'pkbmarmillanusa')
-        const detectedSlug = parts[parts.length - 1];
-        
-        if (detectedSlug && detectedSlug !== 'www' && detectedSlug !== 'master') {
-          slug = detectedSlug;
-          console.log('DEBUG [SchoolContext] Detected slug from subdomain:', slug);
-        }
-      } else {
-        customDomain = hostname;
-        console.log('DEBUG [SchoolContext] Treating as custom domain:', customDomain);
       }
 
       if (slug) {

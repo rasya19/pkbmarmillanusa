@@ -70,9 +70,21 @@ export default function Dashboard() {
   const { school, isMasterDomain } = useSchool();
   const userRole = localStorage.getItem('userRole') || 'Siswa';
   const isAdmin = userRole === 'Admin' || userRole === 'SuperAdmin';
-  const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || (userRole === 'SuperAdmin' ? 'Master Admin' : 'Staf Pengajar');
+  const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName');
   const studentName = localStorage.getItem('studentName');
-  const displayName = userRole === 'Siswa' ? (studentName || 'Siswa') : adminName;
+  
+  // Robust display name resolution
+  let displayName = 'User';
+  if (userRole === 'Siswa') {
+    displayName = studentName || 'Siswa';
+  } else if (userRole === 'SuperAdmin') {
+    displayName = adminName || 'Master Admin';
+  } else if (userRole === 'Admin') {
+    displayName = adminName || 'Administrator';
+  } else if (userRole === 'Guru') {
+    displayName = adminName || 'Staf Pengajar';
+  }
+  
   const studentId = localStorage.getItem('studentId');
   const studentClass = localStorage.getItem('studentClass') || 'Umum';
 

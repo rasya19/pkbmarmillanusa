@@ -68,7 +68,7 @@ export default function StudentCard({ student, schoolName = "PKBM RASYATECH", cl
         <div className="flex-1 space-y-4">
           <div>
             <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1.5">Full Name</p>
-            <h3 className="text-sm font-black text-white uppercase italic tracking-tight leading-tight line-clamp-1">{student.nama || 'Budi Santoso'}</h3>
+            <h3 className="text-sm font-black text-white uppercase italic tracking-tight leading-tight line-clamp-1">{student.nama || 'Nama Siswa'}</h3>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

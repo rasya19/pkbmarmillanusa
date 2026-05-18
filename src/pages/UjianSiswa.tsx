@@ -51,7 +51,7 @@ export default function UjianSiswa() {
   const [integrityChecked, setIntegrityChecked] = useState(false);
 
   const studentId = localStorage.getItem('studentId') || 'demo-siswa-1';
-  const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
+  const studentName = localStorage.getItem('studentName') || 'Siswa';
   const studentNisn = localStorage.getItem('studentNisn') || '19201001';
 
   // Load Initial Data
