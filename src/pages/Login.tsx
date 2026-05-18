@@ -177,6 +177,9 @@ export default function Login() {
         // Priority: Profile Table Role -> Auth Metadata Role -> Fallback Siswa
         let finalRole = profile?.role || profile?.peran || data.user.user_metadata?.role || 'Siswa';
         
+        console.log('DEBUG [Auth] Initial Role from DB/Metadata:', finalRole);
+        console.log('DEBUG [Auth] Checking Principal Email Bypass for:', data.user.email);
+
         // Final sanity check for administrative emails (BYPASS for identified owners/admins)
         const principalEmails = [
           'ismanto095@gmail.com', 
@@ -184,17 +187,22 @@ export default function Login() {
           'armillanusa@gmail.com'
         ];
         
-        if (data.user.email && principalEmails.includes(data.user.email.toLowerCase().trim())) {
-          if (data.user.email.toLowerCase().trim() === 'ismanto095@gmail.com') {
+        const userEmailLower = data.user.email?.toLowerCase().trim();
+        
+        if (userEmailLower && principalEmails.map(e => e.toLowerCase().trim()).includes(userEmailLower)) {
+          console.log('DEBUG [Auth] Bypass Email Match Found:', userEmailLower);
+          if (userEmailLower === 'ismanto095@gmail.com') {
             finalRole = 'SuperAdmin';
           } else {
             // Guarantee Admin role for institutional email
             finalRole = 'Admin';
           }
           console.log('DEBUG [Auth] Principal Email Bypass Triggered. Forced Role:', finalRole);
+        } else {
+          console.log('DEBUG [Auth] No Bypass Triggered. Principal Emails:', principalEmails);
         }
         
-        console.log('DEBUG [Auth] Resolved Role:', finalRole);
+        console.log('DEBUG [Auth] Final Resolved Role:', finalRole);
         localStorage.setItem('userRole', finalRole);
         
         // Correctly set admin name based on profile, metadata, or role

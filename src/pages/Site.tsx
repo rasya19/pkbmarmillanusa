@@ -535,8 +535,9 @@ export default function Site() {
                     .update({
                       name: identityForm.name,
                       npsn: identityForm.npsn,
-                      accreditation: identityForm.accreditation,
-                      logoUrl: identityForm.logoUrl
+                      akreditasi: identityForm.accreditation,
+                      address: identityForm.address,
+                      logo_url: identityForm.logoUrl
                     })
                     .eq('id', school.id);
                   if (error) throw error;
@@ -724,7 +725,7 @@ export default function Site() {
                     .update({
                       address: identityForm.address,
                       whatsapp: identityForm.whatsapp,
-                      adminEmail: identityForm.email
+                      admin_email: identityForm.email
                     })
                     .eq('id', school.id);
                   if (error) throw error;

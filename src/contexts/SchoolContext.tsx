@@ -115,7 +115,17 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               setError('Sekolah belum aktif');
               setSchool(null);
             } else {
-              setSchool(data as School);
+              // Map DB snake_case columns to camelCase interface
+              const mappedData: School = {
+                ...data,
+                accreditation: data.akreditasi || data.accreditation,
+                adminEmail: data.adminEmail || data.admin_email,
+                logoUrl: data.logoUrl || data.logo_url,
+                themeColor: data.themeColor || data.theme_color,
+                expiryDate: data.expiryDate || data.expiry_date,
+                studentLimit: data.studentLimit || data.student_limit
+              };
+              setSchool(mappedData);
             }
           } else {
             console.warn('DEBUG [SchoolContext] No school found for custom domain:', customDomain);
@@ -181,7 +191,17 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           setSchool(null);
         } else {
           console.log('DEBUG [SchoolContext] School is RESOLVED as ACTIVE (Bypass or Valid)');
-          setSchool(data as School);
+          // Map DB snake_case columns to camelCase interface
+          const mappedData: School = {
+            ...data,
+            accreditation: data.akreditasi || data.accreditation,
+            adminEmail: data.adminEmail || data.admin_email,
+            logoUrl: data.logoUrl || data.logo_url,
+            themeColor: data.themeColor || data.theme_color,
+            expiryDate: data.expiryDate || data.expiry_date,
+            studentLimit: data.studentLimit || data.student_limit
+          };
+          setSchool(mappedData);
         }
       } else {
         console.log('DEBUG: School NOT found or error:', error);
