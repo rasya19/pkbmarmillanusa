@@ -118,11 +118,36 @@ export default function Login() {
         console.log('DEBUG [Auth] Success! User ID:', data.user.id);
         localStorage.setItem('userEmail', data.user.email || '');
         
-        const { data: profile } = await supabase
+        // 1. Try fetch profile by Auth ID
+        const { data: profileById } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
           .single();
+        
+        let profile = profileById;
+
+        // 2. Fallback to Email if Not Found by ID (for newly approved admins)
+        if (!profile && data.user.email) {
+          console.log('DEBUG [Auth] Profile not found by ID, trying Email:', data.user.email);
+          const { data: profileByEmail } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', data.user.email.toLowerCase().trim())
+            .single();
+          
+          if (profileByEmail) {
+            console.log('DEBUG [Auth] Found profile by Email. Linking to ID:', data.user.id);
+            profile = profileByEmail;
+            // Link the profile to the Auth ID for future efficient lookups
+            const { error: linkError } = await supabase
+              .from('profiles')
+              .update({ id: data.user.id })
+              .eq('email', data.user.email.toLowerCase().trim());
+            
+            if (linkError) console.error('DEBUG [Auth] Failed to link profile ID:', linkError);
+          }
+        }
         
         let finalRole = profile?.role || profile?.peran || data.user.user_metadata?.role || 'Siswa';
         
@@ -131,8 +156,11 @@ export default function Login() {
           finalRole = 'SuperAdmin';
         }
         
+        console.log('DEBUG [Auth] Resolved Role:', finalRole);
         localStorage.setItem('userRole', finalRole);
         localStorage.setItem('adminName', profile?.nama || profile?.name || 'Master Admin');
+        if (profile?.school_id) localStorage.setItem('school_id', profile.school_id);
+        
         localStorage.removeItem('isDemoMode');
         
         if (finalRole === 'SuperAdmin' && isMasterDomain) {

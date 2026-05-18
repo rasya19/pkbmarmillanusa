@@ -55,8 +55,15 @@ export default function Layout() {
   const { school, isMasterDomain } = useSchool();
   const location = useLocation();
   const navigate = useNavigate();
-  const [role, setRole] = useState<Role>((localStorage.getItem('userRole') as Role) || 'Siswa');
+  const [role, setRole] = useState<Role>('Siswa');
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+
+  // Sync role from localStorage on mount and when it changes
+  useEffect(() => {
+    const storedRole = (localStorage.getItem('userRole') as Role) || 'Siswa';
+    console.log('DEBUG [Layout] Initial role from localStorage:', storedRole);
+    setRole(storedRole);
+  }, [location.pathname]); // Re-check on navigation
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -289,11 +296,11 @@ export default function Layout() {
             icon: FolderOpen, 
             label: 'Master Data', 
             subItems: [
-              { icon: Users, label: 'Data Siswa', path: `${prefix}/data-siswa`, minPlan: 'Silver' },
-              { icon: UserCheck, label: 'Data Guru', path: `${prefix}/data-guru`, minPlan: 'Silver' },
-              { icon: Book, label: 'Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran`, minPlan: 'Silver' },
-              { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas`, minPlan: 'Silver' },
-              { icon: UserPlus, label: 'Data Pendaftar', path: `${prefix}/dashboard/ppdb`, minPlan: 'Silver' },
+              { icon: Users, label: 'Manajemen Siswa', path: `${prefix}/data-siswa`, minPlan: 'Silver' },
+              { icon: UserCheck, label: 'Manajemen Guru', path: `${prefix}/data-guru`, minPlan: 'Silver' },
+              { icon: Book, label: 'Kelola Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran`, minPlan: 'Silver' },
+              { icon: Layers, label: 'Manajemen Kelas', path: `${prefix}/dashboard/kelas`, minPlan: 'Silver' },
+              { icon: UserPlus, label: 'Data Pendaftar (PPDB)', path: `${prefix}/dashboard/ppdb`, minPlan: 'Silver' },
             ]
           },
           {
@@ -319,8 +326,8 @@ export default function Layout() {
               { icon: FileBarChart, label: 'Kelola Ujian', path: `${prefix}/dashboard/soal`, minPlan: 'Silver' },
               { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian`, minPlan: 'Silver' },
               { icon: Eye, label: 'Monitoring Live', path: `${prefix}/dashboard/hasil-ujian`, minPlan: 'Silver' },
-              { icon: Check, label: 'Riwayat Ujian', path: `${prefix}/dashboard/nilai`, minPlan: 'Silver' },
-              { icon: Settings, label: 'Pengaturan', path: `${prefix}/dashboard/settings`, minPlan: 'Silver' },
+              { icon: Check, label: 'Input & Rekap Nilai', path: `${prefix}/dashboard/nilai`, minPlan: 'Silver' },
+              { icon: Settings, label: 'Pengaturan Ujian', path: `${prefix}/dashboard/settings`, minPlan: 'Silver' },
             ]
           },
           {
