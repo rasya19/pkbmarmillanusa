@@ -48,19 +48,13 @@ async function startServer() {
       const password = 'DemoAccount123!';
 
       for (const user of demoUsers) {
-        // 1. Delete old user if exists (to be clean)
-        // Note: auth.admin.listUsers might be slow or pagination heavy, 
-        // so we try to find by email first or just delete if we have ID.
-        // For simplicity, we just try to create. If it exists, we update.
-        
-        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
         const existingUser = users?.find(u => u.email === user.email);
 
         if (existingUser) {
           await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
         }
 
-        // 2. Create User
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: user.email,
           password: password,
@@ -70,9 +64,7 @@ async function startServer() {
         if (authError) throw authError;
 
         if (authData.user) {
-          // 3. Update Profile
-          // We assume a 'profiles' table exists that is linked to 'auth.users' via 'id'
-          const { error: profileError } = await supabaseAdmin
+          await supabaseAdmin
             .from('profiles')
             .upsert({ 
               id: authData.user.id,
@@ -80,10 +72,6 @@ async function startServer() {
               subscription_plan: user.plan,
               updated_at: new Date()
             }, { onConflict: 'id' });
-
-          if (profileError) {
-             console.warn(`Gagal update profil untuk ${user.email}. Pastikan tabel 'profiles' memiliki kolom 'subscription_plan'.`, profileError);
-          }
         }
       }
 
@@ -91,6 +79,50 @@ async function startServer() {
 
     } catch (error: any) {
       console.error("Seeding error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // API Route untuk Menghapus Registrasi + Domain Vercel
+  app.delete("/api/delete-registration/:id", async (req, res) => {
+    const { id } = req.params;
+    const { createClient } = await import("@supabase/supabase-js");
+    const axios = (await import("axios")).default;
+
+    try {
+      if (!supabaseAdmin) {
+        return res.status(500).json({ success: false, message: "SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi." });
+      }
+
+      // 1. Ambil data slug
+      const { data: registration } = await supabaseAdmin
+        .from('registrations')
+        .select('slug, school_name')
+        .eq('id', id)
+        .single();
+      
+      if (!registration) {
+        return res.status(404).json({ success: false, message: "Data tidak ditemukan." });
+      }
+
+      const domainName = `${registration.slug || registration.school_name.toLowerCase().replace(/ /g, '-')}.rsch.my.id`;
+
+      // 2. Hapus Supabase
+      await supabaseAdmin.from('registrations').delete().eq('id', id);
+
+      // 3. Hapus Vercel
+      if (process.env.VERCEL_TOKEN && process.env.VERCEL_PROJECT_ID) {
+        try {
+          const teamId = process.env.VERCEL_TEAM_ID ? `?teamId=${process.env.VERCEL_TEAM_ID}` : '';
+          await axios.delete(
+            `https://api.vercel.com/v9/projects/${process.env.VERCEL_PROJECT_ID}/domains/${domainName}${teamId}`,
+            { headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` } }
+          );
+        } catch (e) { console.error("Vercel Delete Error:", e); }
+      }
+
+      res.json({ success: true, message: `Registrasi ${domainName} telah dihapus.` });
+    } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
   });
