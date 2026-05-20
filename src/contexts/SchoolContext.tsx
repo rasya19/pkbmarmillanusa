@@ -124,7 +124,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               setSchool(null);
             } else {
               // Verification check
-              const isVerified = await verifySchoolRegistration(data.id || data.slug);
+              const { isVerified, schoolName } = await verifySchoolRegistration(data.id || data.slug);
               if (!isVerified) {
                 console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status');
                 setIsBlocked(true);
@@ -137,7 +137,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               const mappedData: School = {
                 ...data,
                 id: data.id || data.slug, // Ensure we have an ID for updates
-                name: data.nama || data.name,
+                name: schoolName || data.nama || data.name,
                 accreditation: data.akreditasi || data.accreditation,
                 address: data.alamat || data.address,
                 adminEmail: data.adminEmail || data.admin_email,
@@ -171,17 +171,21 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     console.log('DEBUG [SchoolContext] Verifying registration for ID:', schoolId);
     const { data: registration, error: regError } = await supabase
       .from('registrations')
-      .select('status')
+      .select('status, school_name')
       .eq('school_id', schoolId)
       .maybeSingle();
 
     if (regError) {
       console.error('DEBUG [SchoolContext] Registration lookup error:', regError);
-    } else {
-      console.log('DEBUG [SchoolContext] Registration lookup result:', registration);
+      return { isVerified: false, schoolName: null };
     }
     
-    return !regError && registration && registration.status === 'verified';
+    console.log('DEBUG [SchoolContext] Registration lookup result:', registration);
+    
+    return {
+      isVerified: registration && registration.status === 'verified',
+      schoolName: registration ? registration.school_name : null
+    };
   };
 
   const setSchoolBySlug = useCallback(async (slug: string) => {
@@ -212,7 +216,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         console.log('DEBUG [SchoolContext] Found school data:', data);
 
         // Verification check
-        const isVerified = await verifySchoolRegistration(data.id || normalizedSlug);
+        const { isVerified, schoolName } = await verifySchoolRegistration(data.id || normalizedSlug);
         if (!isVerified) {
           console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status');
           setIsBlocked(true);
@@ -244,7 +248,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           const mappedData: School = {
             ...data,
             id: data.id || data.slug, // Ensure we have an ID for updates
-            name: data.nama || data.name,
+            name: schoolName || data.nama || data.name, // Use name from registration if available
             accreditation: data.akreditasi || data.accreditation,
             address: data.alamat || data.address,
             adminEmail: data.adminEmail || data.admin_email,
