@@ -24,6 +24,7 @@ interface SchoolContextType {
   loading: boolean;
   isMasterDomain: boolean;
   error: string | null;
+  isBlocked: boolean;
   setSchoolBySlug: (slug: string) => Promise<void>;
 }
 
@@ -34,6 +35,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true); // Start loading as true
   const [error, setError] = useState<string | null>(null);
   const [isMasterDomain, setIsMasterDomain] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   
   const currentSchoolSlugRef = React.useRef<string | null>(null);
 
@@ -121,6 +123,15 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               setError('Sekolah belum aktif');
               setSchool(null);
             } else {
+              // Verification check
+              const isVerified = await verifySchoolRegistration(data.id || data.slug);
+              if (!isVerified) {
+                console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status');
+                setIsBlocked(true);
+                setError('403: Layanan Nonaktif');
+                setSchool(null);
+                return;
+              }
               // Map DB snake_case columns to camelCase interface
               const mappedData: School = {
                 ...data,
@@ -155,6 +166,16 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     resolveByHostname();
   }, []);
 
+  const verifySchoolRegistration = async (schoolId: string) => {
+    const { data: registration, error: regError } = await supabase
+      .from('registrations')
+      .select('status')
+      .eq('school_id', schoolId)
+      .maybeSingle();
+
+    return !regError && registration && registration.status === 'verified';
+  };
+
   const setSchoolBySlug = useCallback(async (slug: string) => {
     const normalizedSlug = slug.toLowerCase();
     
@@ -181,6 +202,16 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       
       if (!error && data) {
         console.log('DEBUG [SchoolContext] Found school data:', data);
+
+        // Verification check
+        const isVerified = await verifySchoolRegistration(data.id || normalizedSlug);
+        if (!isVerified) {
+          console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status');
+          setIsBlocked(true);
+          setError('403: Layanan Nonaktif');
+          setSchool(null);
+          return;
+        }
         
         // BYPASS LOGIC: If status is undefined (column doesn't exist) or null, default to 'active'
         const rawStatus = data.status;
@@ -229,7 +260,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SchoolContext.Provider value={{ school, loading, isMasterDomain, error, setSchoolBySlug }}>
+    <SchoolContext.Provider value={{ school, loading, isMasterDomain, error, isBlocked, setSchoolBySlug }}>
       {children}
     </SchoolContext.Provider>
   );
