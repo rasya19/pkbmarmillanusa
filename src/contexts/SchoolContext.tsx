@@ -130,6 +130,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
                 setIsBlocked(true);
                 setError('403: Layanan Nonaktif');
                 setSchool(null);
+                setLoading(false);
                 return;
               }
               // Map DB snake_case columns to camelCase interface
@@ -167,12 +168,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const verifySchoolRegistration = async (schoolId: string) => {
+    console.log('DEBUG [SchoolContext] Verifying registration for ID:', schoolId);
     const { data: registration, error: regError } = await supabase
       .from('registrations')
       .select('status')
       .eq('school_id', schoolId)
       .maybeSingle();
 
+    if (regError) {
+      console.error('DEBUG [SchoolContext] Registration lookup error:', regError);
+    } else {
+      console.log('DEBUG [SchoolContext] Registration lookup result:', registration);
+    }
+    
     return !regError && registration && registration.status === 'verified';
   };
 
@@ -210,6 +218,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           setIsBlocked(true);
           setError('403: Layanan Nonaktif');
           setSchool(null);
+          setLoading(false);
           return;
         }
         
