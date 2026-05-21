@@ -87,7 +87,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         console.log('DEBUG [SchoolContext] Found school data:', data);
         console.log('DEBUG [SchoolContext] Checking registration for subdomain:', normalizedSlug);
         
-        // Ambil data registrasi (tanpa deleted_at karena kolomnya tidak ada di DB)
+       // Ambil data registrasi (tanpa deleted_at karena kolomnya tidak ada di DB)
         const { data: registration, error: regError } = await supabase
           .from('registrations')
           .select('status, school_name, is_approved')
@@ -104,7 +104,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        if (registration.status === 'DELETED') {
+        // Ambil status dan paksa ke huruf kapital agar aman dari variasi penulisan di DB
+        const regStatus = registration.status?.toUpperCase();
+
+        if (regStatus === 'DELETED') {
           console.warn('DEBUG [SchoolContext] School deleted:', normalizedSlug);
           setIsBlocked(true);
           setError('404: Sekolah sudah dihapus');
@@ -112,7 +115,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        if (registration.status === 'SUSPENDED') {
+        if (regStatus === 'SUSPENDED') {
           console.warn('DEBUG [SchoolContext] School suspended:', normalizedSlug);
           setIsBlocked(true);
           setError('403: Layanan ditangguhkan sementara');
@@ -120,7 +123,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        if (registration.status !== 'ACTIVE' || registration.is_approved !== true) {
+        // BARIS UTAMA PERBAIKAN: Sekarang menerima status 'ACTIVE' ataupun 'VERIFIED'
+        const isApprovedAndValid = (regStatus === 'ACTIVE' || regStatus === 'VERIFIED') && registration.is_approved === true;
+
+        if (!isApprovedAndValid) {
           console.warn('DEBUG [SchoolContext] School not active/approved:', normalizedSlug);
           setIsBlocked(true);
           setError('403: Layanan belum aktif');
@@ -131,21 +137,6 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setSchool(mapSchoolData(data, registration));
         setIsBlocked(false);
         setError(null);
-      } else {
-        console.log('DEBUG: School NOT found or error:', schoolError);
-        setSchool(null);
-        setError('Sekolah tidak ditemukan');
-        setIsBlocked(true);
-      }
-    } catch (err) {
-      console.error('Fetch school error:', err);
-      setError('Gagal memuat data sekolah');
-      setIsBlocked(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // Efek inisialisasi berdasarkan Hostname saat aplikasi dimuat
   useEffect(() => {
     const resolveByHostname = async () => {
