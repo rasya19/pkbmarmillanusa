@@ -131,12 +131,13 @@ export default function MasterAdminDashboard() {
     try {
       // 2. Update registration status and slug
       const { error: updateError } = await supabase
-        .from('registrations')
-        .update({ 
-          status: 'approved',
-          slug: slugVal 
-        })
-        .eq('id', reg.id);
+  .from('registrations')
+  .update({
+    status: status,
+    is_approved: status.toLowerCase() === 'verified' || status.toLowerCase() === 'active',
+    auth_uid: generatedAuthUid
+  })
+  .eq('id', id);
       
       if (updateError) {
         console.error('DEBUG [Approval] Registration Update Error:', updateError);
