@@ -148,7 +148,7 @@ function ComingSoon() {
 }
 
 function AppContent() {
-  const { school, loading, isBlocked } = useSchool();
+  const { school, loading, isBlocked, error } = useSchool();
   const location = useLocation();
   const isSubroutePath = location.pathname.startsWith('/s/') || location.pathname.startsWith('/dashboard');
 
@@ -159,11 +159,8 @@ function AppContent() {
   useEffect(() => {
     const verifyAccess = async () => {
       const hostname = window.location.hostname.toLowerCase().trim();
-      const subdomain = hostname.split('.')[0];
       
-      console.log('DEBUG [Security AppContent] Resolving hostname:', hostname, 'Subdomain:', subdomain);
-
-      // Exempt standard main domains, localhost, and system templates/builders
+      // Daftar pengecualian domain utama dan lokal
       const isExempt = 
         hostname === 'localhost' || 
         hostname === '127.0.0.1' || 
@@ -176,75 +173,25 @@ function AppContent() {
         hostname === '';
 
       if (isExempt) {
+        setSecurityBlocked(false);
         setIsVerifying(false);
         return;
       }
 
-      try {
-        let registration = null;
+      // SINKRONISASI UTAMA: Ikuti status blokir dan teks error dari SchoolContext
+      if (isBlocked) {
+        setSecurityBlocked(true);
+        // Jika dari context ada pesan error spesifik, pakai pesannya. Jika tidak, gunakan default.
+        setBlockedMessage(error || "403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
+      } else {
+        setSecurityBlocked(false);
+      }
+      
+      setIsVerifying(false);
+    };
 
-        // Try 'slug' matching
-        try {
-          const { data, error } = await supabase
-            .from('registrations')
-            .select('status, school_name, slug')
-            .eq('slug', subdomain)
-            .maybeSingle();
-          if (!error && data) registration = data;
-        } catch (e) {
-          console.warn('DEBUG [Security AppContent] slug match error fallback:', e);
-        }
-
-        // Try 'subdomain' matching
-        if (!registration) {
-          try {
-            const { data, error } = await supabase
-              .from('registrations')
-              .select('*')
-              .eq('subdomain', subdomain)
-              .maybeSingle();
-            if (!error && data) registration = data;
-          } catch (e) {
-            console.warn('DEBUG [Security AppContent] subdomain match error fallback:', e);
-          }
-        }
-
-        // Try 'subdomain_prefix' matching
-        if (!registration) {
-          try {
-            const { data, error } = await supabase
-              .from('registrations')
-              .select('*')
-              .eq('subdomain_prefix', subdomain)
-              .maybeSingle();
-            if (!error && data) registration = data;
-          } catch (e) {
-            console.warn('DEBUG [Security AppContent] subdomain_prefix match error fallback:', e);
-          }
-        }
-
-        // Try 'school_id' matching
-        if (!registration) {
-          try {
-            const { data, error } = await supabase
-              .from('registrations')
-              .select('*')
-              .eq('school_id', subdomain)
-              .maybeSingle();
-            if (!error && data) registration = data;
-          } catch (e) {
-            console.warn('DEBUG [Security AppContent] school_id match error fallback:', e);
-          }
-        }
-
-        console.log('DEBUG [Security AppContent] Verification result:', registration);
-
-        if (!registration) {
-          setSecurityBlocked(true);
-          setBlockedMessage("403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
-          setIsVerifying(false);
-          return;
-        }
+    verifyAccess();
+  }, [isBlocked, error]); // Mengawasi perubahan status blokir dari Context
 
         const status = (registration.status || '').toLowerCase().trim();
         const isValidStatus = status === 'verified' || status === 'approved';
