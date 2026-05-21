@@ -181,7 +181,6 @@ function AppContent() {
       // SINKRONISASI UTAMA: Ikuti status blokir dan teks error dari SchoolContext
       if (isBlocked) {
         setSecurityBlocked(true);
-        // Jika dari context ada pesan error spesifik, pakai pesannya. Jika tidak, gunakan default.
         setBlockedMessage(error || "403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
       } else {
         setSecurityBlocked(false);
@@ -191,28 +190,7 @@ function AppContent() {
     };
 
     verifyAccess();
-  }, [isBlocked, error]); // Mengawasi perubahan status blokir dari Context
-
-        const status = (registration.status || '').toLowerCase().trim();
-        const isValidStatus = status === 'verified' || status === 'approved';
-
-        if (!isValidStatus) {
-          setSecurityBlocked(true);
-          setBlockedMessage("403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
-          setIsVerifying(false);
-          return;
-        }
-
-        // Registration exists and is active. Pass to default School resolver
-        setIsVerifying(false);
-      } catch (err) {
-        console.error('DEBUG [Security AppContent] Critical error verifying:', err);
-        setIsVerifying(false);
-      }
-    };
-
-    verifyAccess();
-  }, []);
+  }, [isBlocked, error]);
 
   if (securityBlocked) {
     return (
@@ -223,7 +201,6 @@ function AppContent() {
           </div>
           <h1 className="text-xl font-black tracking-tight text-slate-900 uppercase italic">Layanan Nonaktif</h1>
           
-          {/* UBAH DI BARIS INI AGAR MENCETAK ERROR SECARA DINAMIS */}
           <p className="font-bold text-red-600 text-xs mt-1 uppercase tracking-wide">
             {blockedMessage || "Lembaga Belum Terverifikasi atau Sudah Dihapus"}
           </p>
@@ -238,6 +215,7 @@ function AppContent() {
       </div>
     );
   }
+
   if (isVerifying) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
@@ -256,7 +234,6 @@ function AppContent() {
           <h1 className="text-6xl font-black italic text-red-500">403</h1>
           <p className="text-xl font-bold mt-4">Layanan Nonaktif</p>
           
-          {/* MENCETAK ERROR DARI CONTEXT */}
           <p className="text-sm mt-2 text-red-600 font-medium">
             {error || "Sekolah atau institusi Anda saat ini tidak aktif."}
           </p>
@@ -341,7 +318,6 @@ function AppContent() {
          <Route path="ujian/:id" element={<UjianSiswa />} />
          <Route path="dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
             <Route index element={<Dashboard />} />
-            {/* ... other child routes ... */}
             <Route path="course/:id" element={<CourseDetail />} />
             <Route path="data-siswa" element={<DataSiswa />} />
             <Route path="soal" element={<BankSoal />} />
@@ -383,9 +359,7 @@ function AppContent() {
       </Route>
 
       <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
-        {/* These might be global dashboard or school dashboard if context exists */}
         <Route index element={<Dashboard />} />
-        {/* ... */}
         <Route path="course/:id" element={<CourseDetail />} />
         <Route path="data-siswa" element={<DataSiswa />} />
         <Route path="soal" element={<BankSoal />} />
@@ -423,7 +397,6 @@ function AppContent() {
     </Routes>
   );
 }
-
 function PresensiWrapper() {
   const role = localStorage.getItem('userRole') || 'Siswa';
   return role === 'Siswa' ? <PresensiSiswa /> : <Presensi />;
