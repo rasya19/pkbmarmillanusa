@@ -11,7 +11,6 @@ export async function seedDemoData() {
         npsn: '12345678',
         subscription_plan: 'Silver',
         status: 'active',
-        // SINKRONISASI NAMA KOLOM KE SNAKE_CASE DATABASE
         admin_email: 'demo.silver@example.com', 
         created_at: new Date().toISOString()
       },
@@ -22,7 +21,6 @@ export async function seedDemoData() {
         npsn: '87654321',
         subscription_plan: 'Gold',
         status: 'active',
-        // SINKRONISASI NAMA KOLOM KE SNAKE_CASE DATABASE
         admin_email: 'demo.gold@example.com',
         created_at: new Date().toISOString()
       },
@@ -33,13 +31,11 @@ export async function seedDemoData() {
         npsn: '11223344',
         subscription_plan: 'Platinum',
         status: 'active',
-        // SINKRONISASI NAMA KOLOM KE SNAKE_CASE DATABASE
         admin_email: 'demo.platinum@example.com',
         created_at: new Date().toISOString()
       }
     ];
 
-    // MENGGUNAKAN UPSERT AGAR JIKA DATA SUDAH ADA, AKAN DI-UPDATE (TIDAK ERROR BENTROK)
     const { error } = await supabase
       .from('schools')
       .upsert(demoSchools, { onConflict: 'id' });
