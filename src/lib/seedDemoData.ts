@@ -11,8 +11,8 @@ export async function seedDemoData() {
         npsn: '12345678',
         subscription_plan: 'Silver',
         status: 'active',
-        admin_email: 'demo.silver@example.com', 
-        created_at: new Date().toISOString()
+        adminEmail: 'demo.silver@example.com',
+        createdAt: new Date().toISOString()
       },
       {
         id: 'demo-gold',
@@ -21,8 +21,8 @@ export async function seedDemoData() {
         npsn: '87654321',
         subscription_plan: 'Gold',
         status: 'active',
-        admin_email: 'demo.gold@example.com',
-        created_at: new Date().toISOString()
+        adminEmail: 'demo.gold@example.com',
+        createdAt: new Date().toISOString()
       },
       {
         id: 'demo-platinum',
@@ -31,20 +31,17 @@ export async function seedDemoData() {
         npsn: '11223344',
         subscription_plan: 'Platinum',
         status: 'active',
-        admin_email: 'demo.platinum@example.com',
-        created_at: new Date().toISOString()
+        adminEmail: 'demo.platinum@example.com',
+        createdAt: new Date().toISOString()
       }
     ];
 
-    const { error } = await supabase
-      .from('schools')
-      .upsert(demoSchools, { onConflict: 'id' });
-
+    const { error } = await supabase.from('schools').insert(demoSchools);
     if (error) throw error;
     
     toast.success('Data demo berhasil di-seeding!');
   } catch (error: any) {
     console.error('Seed error:', error);
-    toast.error('Gagal seeding data: ' + (error.message || 'Error tidak dikenal'));
+    toast.error('Gagal seeding data: ' + error.message);
   }
 }

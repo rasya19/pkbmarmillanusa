@@ -148,7 +148,7 @@ function ComingSoon() {
 }
 
 function AppContent() {
-  const { school, loading, isBlocked, error } = useSchool();
+  const { school, loading, isBlocked } = useSchool();
   const location = useLocation();
   const isSubroutePath = location.pathname.startsWith('/s/') || location.pathname.startsWith('/dashboard');
 
@@ -159,8 +159,11 @@ function AppContent() {
   useEffect(() => {
     const verifyAccess = async () => {
       const hostname = window.location.hostname.toLowerCase().trim();
+      const subdomain = hostname.split('.')[0];
       
-      // Daftar pengecualian domain utama dan lokal
+      console.log('DEBUG [Security AppContent] Resolving hostname:', hostname, 'Subdomain:', subdomain);
+
+      // Exempt standard main domains, localhost, and system templates/builders
       const isExempt = 
         hostname === 'localhost' || 
         hostname === '127.0.0.1' || 
@@ -173,24 +176,96 @@ function AppContent() {
         hostname === '';
 
       if (isExempt) {
-        setSecurityBlocked(false);
         setIsVerifying(false);
         return;
       }
 
-      // SINKRONISASI UTAMA: Ikuti status blokir dan teks error dari SchoolContext
-      if (isBlocked) {
-        setSecurityBlocked(true);
-        setBlockedMessage(error || "403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
-      } else {
-        setSecurityBlocked(false);
+      try {
+        let registration = null;
+
+        // Try 'slug' matching
+        try {
+          const { data, error } = await supabase
+            .from('registrations')
+            .select('status, school_name, slug')
+            .eq('slug', subdomain)
+            .maybeSingle();
+          if (!error && data) registration = data;
+        } catch (e) {
+          console.warn('DEBUG [Security AppContent] slug match error fallback:', e);
+        }
+
+        // Try 'subdomain' matching
+        if (!registration) {
+          try {
+            const { data, error } = await supabase
+              .from('registrations')
+              .select('*')
+              .eq('subdomain', subdomain)
+              .maybeSingle();
+            if (!error && data) registration = data;
+          } catch (e) {
+            console.warn('DEBUG [Security AppContent] subdomain match error fallback:', e);
+          }
+        }
+
+        // Try 'subdomain_prefix' matching
+        if (!registration) {
+          try {
+            const { data, error } = await supabase
+              .from('registrations')
+              .select('*')
+              .eq('subdomain_prefix', subdomain)
+              .maybeSingle();
+            if (!error && data) registration = data;
+          } catch (e) {
+            console.warn('DEBUG [Security AppContent] subdomain_prefix match error fallback:', e);
+          }
+        }
+
+        // Try 'school_id' matching
+        if (!registration) {
+          try {
+            const { data, error } = await supabase
+              .from('registrations')
+              .select('*')
+              .eq('school_id', subdomain)
+              .maybeSingle();
+            if (!error && data) registration = data;
+          } catch (e) {
+            console.warn('DEBUG [Security AppContent] school_id match error fallback:', e);
+          }
+        }
+
+        console.log('DEBUG [Security AppContent] Verification result:', registration);
+
+        if (!registration) {
+          setSecurityBlocked(true);
+          setBlockedMessage("403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
+          setIsVerifying(false);
+          return;
+        }
+
+        const status = (registration.status || '').toLowerCase().trim();
+        const isValidStatus = status === 'verified' || status === 'approved';
+
+        if (!isValidStatus) {
+          setSecurityBlocked(true);
+          setBlockedMessage("403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
+          setIsVerifying(false);
+          return;
+        }
+
+        // Registration exists and is active. Pass to default School resolver
+        setIsVerifying(false);
+      } catch (err) {
+        console.error('DEBUG [Security AppContent] Critical error verifying:', err);
+        setIsVerifying(false);
       }
-      
-      setIsVerifying(false);
     };
 
     verifyAccess();
-  }, [isBlocked, error]);
+  }, []);
 
   if (securityBlocked) {
     return (
@@ -200,13 +275,9 @@ function AppContent() {
             <span className="text-3xl font-black italic text-red-600">403</span>
           </div>
           <h1 className="text-xl font-black tracking-tight text-slate-900 uppercase italic">Layanan Nonaktif</h1>
-          
-          <p className="font-bold text-red-600 text-xs mt-1 uppercase tracking-wide">
-            {blockedMessage || "Lembaga Belum Terverifikasi atau Sudah Dihapus"}
-          </p>
-          
+          <p className="font-bold text-red-600 text-xs mt-1 uppercase tracking-wide">Lembaga Belum Terverifikasi atau Sudah Dihapus</p>
           <p className="text-xs text-slate-500 leading-relaxed mt-4">
-            Silakan hubungi admin Rasyatech untuk informasi lebih lanjut mengenai status langganan atau aktivasi layanan Anda.
+            Portal ini tidak lagi aktif atau pendaftarannya telah dicabut atau dinonaktifkan secara permanen oleh Superadmin Rasyatech.
           </p>
           <div className="mt-8 border-t border-slate-100 pt-5">
             <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Rasyatech Digital Systems</p>
@@ -229,16 +300,11 @@ function AppContent() {
 
   if (isBlocked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-brand-sidebar p-6 text-center">
-        <div className="text-center p-8 max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-100">
-          <h1 className="text-6xl font-black italic text-red-500">403</h1>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-brand-sidebar">
+        <div className="text-center p-8">
+          <h1 className="text-6xl font-black italic">403</h1>
           <p className="text-xl font-bold mt-4">Layanan Nonaktif</p>
-          
-          <p className="text-sm mt-2 text-red-600 font-medium">
-            {error || "Sekolah atau institusi Anda saat ini tidak aktif."}
-          </p>
-          
-          <p className="text-xs text-slate-400 mt-4">Hubungi Superadmin jika ini merupakan kesalahan sistem.</p>
+          <p className="text-sm mt-2 text-slate-500">Sekolah atau institusi Anda saat ini tidak aktif.</p>
         </div>
       </div>
     );
@@ -318,6 +384,7 @@ function AppContent() {
          <Route path="ujian/:id" element={<UjianSiswa />} />
          <Route path="dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
             <Route index element={<Dashboard />} />
+            {/* ... other child routes ... */}
             <Route path="course/:id" element={<CourseDetail />} />
             <Route path="data-siswa" element={<DataSiswa />} />
             <Route path="soal" element={<BankSoal />} />
@@ -359,7 +426,9 @@ function AppContent() {
       </Route>
 
       <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
+        {/* These might be global dashboard or school dashboard if context exists */}
         <Route index element={<Dashboard />} />
+        {/* ... */}
         <Route path="course/:id" element={<CourseDetail />} />
         <Route path="data-siswa" element={<DataSiswa />} />
         <Route path="soal" element={<BankSoal />} />
@@ -397,6 +466,7 @@ function AppContent() {
     </Routes>
   );
 }
+
 function PresensiWrapper() {
   const role = localStorage.getItem('userRole') || 'Siswa';
   return role === 'Siswa' ? <PresensiSiswa /> : <Presensi />;
