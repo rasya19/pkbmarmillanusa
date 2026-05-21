@@ -24,16 +24,17 @@ export async function seedDemoData() {
         adminEmail: 'demo.gold@example.com',
         createdAt: new Date().toISOString()
       },
-      {
-        id: 'demo-platinum',
-        name: 'Demo Platinum School',
-        slug: 'demo-platinum',
-        npsn: '11223344',
-        subscription_plan: 'Platinum',
-        status: 'active',
-        adminEmail: 'demo.platinum@example.com',
-        createdAt: new Date().toISOString()
-      }
+      // Ganti objek demo-platinum di dalam array demoSchools menjadi seperti ini:
+{
+  id: 'demo-platinum', // biarkan id-nya tetap agar tidak bentrok pk
+  name: 'PKBM Armilla Nusa', // Ganti nama sekolahnya
+  slug: 'pkbmarmillanusa',   // <--- WAJIB SAMA DENGAN SUBDOMAIN KAMU!
+  npsn: '11223344',
+  subscription_plan: 'Platinum',
+  status: 'active',          // Pastikan statusnya 'active'
+  admin_email: 'demo.platinum@example.com',
+  created_at: new Date().toISOString()
+}
     ];
 
     const { error } = await supabase.from('schools').insert(demoSchools);
