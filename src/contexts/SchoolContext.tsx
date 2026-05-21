@@ -30,7 +30,438 @@ interface SchoolContextType {
 
 const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
 
-export function SchoolProvider({ children }: { children: React.ReactNode }) {
+  export function SchoolProvider({ children }: { children: React.ReactNode }) {
+  const [school, setSchool] = useState<School | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isMasterDomain, setIsMasterDomain] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  
+  const currentSchoolSlugRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    currentSchoolSlugRef.current = school?.slug || null;
+  }, [school]);
+
+  // Fungsi pembantu untuk cek aktif secara case-insensitive
+  const checkIsActive = (data: any): boolean => {
+    const rawStatus = data.status;
+    const isActiveCol = data.is_active;
+    
+    return rawStatus === undefined || rawStatus === null || 
+           (typeof rawStatus === 'string' && rawStatus.toLowerCase() === 'active') || 
+           rawStatus === true || 
+           isActiveCol === true ||
+           isActiveCol === undefined;
+  };
+
+  const setSchoolBySlug = useCallback(async (slug: string) => {
+    const normalizedSlug = slug.toLowerCase();
+    
+    if (currentSchoolSlugRef.current === normalizedSlug) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      let { data, error: schoolError } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('id', normalizedSlug)
+        .single();
+      
+      if (schoolError) {
+        ({ data, error: schoolError } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('slug', normalizedSlug)
+            .single());
+      }
+      
+      if (!schoolError && data) {
+        console.log('DEBUG [SchoolContext] Found school data:', data);
+
+        // Ambil data registrasi
+        const { data: registration } = await supabase
+          .from('registrations')
+          .select('status, school_name')
+          .eq('school_id', normalizedSlug)
+          .maybeSingle();
+
+        // REVISI: Menggunakan .toLowerCase() agar aman jika di DB tertulis 'VERIFIED' atau 'Verified'
+        const isVerified = registration && registration.status?.toLowerCase() === 'verified';
+        
+        if (!isVerified) {
+          console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status for slug:', normalizedSlug);
+          setIsBlocked(true);
+          setError('403: Layanan Nonaktif');
+          setSchool(null);
+          return;
+        }
+        
+        const schoolName = registration.school_name;
+        
+        // REVISI: Menggunakan fungsi pembantu checkIsActive yang aman dari huruf kapital 'ACTIVE'
+        if (!checkIsActive(data)) {
+          console.warn('DEBUG [SchoolContext] School is explicitly INACTIVE. Status:', data.status);
+          setError('Sekolah belum aktif atau belum diverifikasi');
+          setSchool(null);
+        } else {
+          console.log('DEBUG [SchoolContext] School is RESOLVED as ACTIVE');
+          const mappedData: School = {
+            ...data,
+            id: data.id || data.slug,
+            name: schoolName || data.nama || data.name,
+            accreditation: data.akreditasi || data.accreditation,
+            address: data.alamat || data.address,
+            adminEmail: data.adminEmail || data.admin_email,
+            logoUrl: data.logoUrl || data.logo_url,
+            themeColor: data.themeColor || data.theme_color,
+            expiryDate: data.expiryDate || data.expiry_date,
+            studentLimit: data.studentLimit || data.student_limit
+          };
+          setSchool(mappedData);
+        }
+      } else {
+        console.log('DEBUG: School NOT found or error:', schoolError);
+        setSchool(null);
+        setError('Sekolah tidak ditemukan');
+      }
+    } catch (err) {
+      console.error('Fetch school error:', err);
+      setError('Gagal memuat data sekolah');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const resolveByHostname = async () => {
+      const hostname = window.location.hostname.toLowerCase().trim();
+      
+      console.log('DEBUG [SchoolContext] Resolving hostname:', hostname);
+      
+      const isMaster = hostname === 'rsch.my.id' || 
+                       hostname === 'www.rsch.my.id' || 
+                       hostname.includes('localhost') || 
+                       (hostname.includes('run.app') && !hostname.split('.')[0].startsWith('pkbm') && !hostname.includes('ais-dev'));
+      
+      setIsMasterDomain(isMaster);
+      
+      let slug = '';
+      let customDomain = '';
+
+      if (hostname.includes('rsch.my.id')) {
+        const parts = hostname.split('.');
+        if (parts.length > 3) slug = parts[0];
+      } else if (hostname.includes('run.app') || hostname.includes('vercel.app')) {
+        const match = hostname.match(/pkbm[a-z0-9]+/i); // Diperbaiki dari 0-0 menjadi 0-9
+        if (match) slug = match[0];
+      }
+
+      if (!slug && !isMaster) {
+        customDomain = hostname;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user && !slug && !customDomain) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('school_id')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (profile?.school_id) {
+          slug = profile.school_id;
+        }
+      }
+
+      if (isMaster && !slug) {
+        setLoading(false);
+        return;
+      }
+
+      if (slug) {
+        await setSchoolBySlug(slug);
+      } else if (customDomain) {
+        try {
+          const { data, error: domainError } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('custom_domain', customDomain)
+            .single();
+            
+          if (!domainError && data) {
+            // REVISI: Menggunakan fungsi pembantu checkIsActive yang aman dari huruf kapital
+            if (!checkIsActive(data)) {
+              setError('Sekolah belum aktif');
+              setSchool(null);
+            } else {
+              const { data: registration } = await supabase
+                .from('registrations')
+                .select('status, school_name')
+                .eq('school_id', data.id || data.slug)
+                .maybeSingle();
+              
+              // REVISI: Menggunakan .toLowerCase()
+              const isVerified = registration && registration.status?.toLowerCase() === 'verified';
+
+              if (!isVerified) {
+                setIsBlocked(true);
+                setError('403: Layanan Nonaktif');
+                setSchool(null);
+                return;
+              }
+              const schoolName = registration.school_name;
+              const mappedData: School = {
+                ...data,
+                id: data.id || data.slug,
+                name: schoolName || data.nama || data.name,
+                accreditation: data.akreditasi || data.accreditation,
+                address: data.alamat || data.address,
+                adminEmail: data.adminEmail || data.admin_email,
+                logoUrl: data.logoUrl || data.logo_url,
+                themeColor: data.themeColor || data.theme_color,
+                expiryDate: data.expiryDate || data.expiry_date,
+                studentLimit: data.studentLimit || data.student_limit
+              };
+              setSchool(mappedData);
+            }
+          } else {
+            setError('Sekolah tidak ditemukan');
+          }
+        } catch (err) {
+          console.error('Custom domain resolution error:', err);
+          setError('Gagal memproses domain');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    resolveByHostname();
+  }, [setSchoolBySlug]);
+
+  return (
+    <SchoolContext.Provider value={{ school, loading, isMasterDomain, error, isBlocked, setSchoolBySlug }}>
+      {children}
+    </SchoolContext.Provider>
+  );
+}
+  
+  const currentSchoolSlugRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    currentSchoolSlugRef.current = school?.slug || null;
+  }, [school]);
+
+  // Fungsi pembantu untuk cek aktif secara case-insensitive
+  const checkIsActive = (data: any): boolean => {
+    const rawStatus = data.status;
+    const isActiveCol = data.is_active;
+    
+    return rawStatus === undefined || rawStatus === null || 
+           (typeof rawStatus === 'string' && rawStatus.toLowerCase() === 'active') || 
+           rawStatus === true || 
+           isActiveCol === true ||
+           isActiveCol === undefined;
+  };
+
+  const setSchoolBySlug = useCallback(async (slug: string) => {
+    const normalizedSlug = slug.toLowerCase();
+    
+    if (currentSchoolSlugRef.current === normalizedSlug) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      let { data, error: schoolError } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('id', normalizedSlug)
+        .single();
+      
+      if (schoolError) {
+        ({ data, error: schoolError } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('slug', normalizedSlug)
+            .single());
+      }
+      
+      if (!schoolError && data) {
+        console.log('DEBUG [SchoolContext] Found school data:', data);
+
+        // Ambil data registrasi
+        const { data: registration } = await supabase
+          .from('registrations')
+          .select('status, school_name')
+          .eq('school_id', normalizedSlug)
+          .maybeSingle();
+
+        // REVISI: Menggunakan .toLowerCase() agar aman jika di DB tertulis 'VERIFIED' atau 'Verified'
+        const isVerified = registration && registration.status?.toLowerCase() === 'verified';
+        
+        if (!isVerified) {
+          console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status for slug:', normalizedSlug);
+          setIsBlocked(true);
+          setError('403: Layanan Nonaktif');
+          setSchool(null);
+          return;
+        }
+        
+        const schoolName = registration.school_name;
+        
+        // REVISI: Menggunakan fungsi pembantu checkIsActive yang aman dari huruf kapital 'ACTIVE'
+        if (!checkIsActive(data)) {
+          console.warn('DEBUG [SchoolContext] School is explicitly INACTIVE. Status:', data.status);
+          setError('Sekolah belum aktif atau belum diverifikasi');
+          setSchool(null);
+        } else {
+          console.log('DEBUG [SchoolContext] School is RESOLVED as ACTIVE');
+          const mappedData: School = {
+            ...data,
+            id: data.id || data.slug,
+            name: schoolName || data.nama || data.name,
+            accreditation: data.akreditasi || data.accreditation,
+            address: data.alamat || data.address,
+            adminEmail: data.adminEmail || data.admin_email,
+            logoUrl: data.logoUrl || data.logo_url,
+            themeColor: data.themeColor || data.theme_color,
+            expiryDate: data.expiryDate || data.expiry_date,
+            studentLimit: data.studentLimit || data.student_limit
+          };
+          setSchool(mappedData);
+        }
+      } else {
+        console.log('DEBUG: School NOT found or error:', schoolError);
+        setSchool(null);
+        setError('Sekolah tidak ditemukan');
+      }
+    } catch (err) {
+      console.error('Fetch school error:', err);
+      setError('Gagal memuat data sekolah');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const resolveByHostname = async () => {
+      const hostname = window.location.hostname.toLowerCase().trim();
+      
+      console.log('DEBUG [SchoolContext] Resolving hostname:', hostname);
+      
+      const isMaster = hostname === 'rsch.my.id' || 
+                       hostname === 'www.rsch.my.id' || 
+                       hostname.includes('localhost') || 
+                       (hostname.includes('run.app') && !hostname.split('.')[0].startsWith('pkbm') && !hostname.includes('ais-dev'));
+      
+      setIsMasterDomain(isMaster);
+      
+      let slug = '';
+      let customDomain = '';
+
+      if (hostname.includes('rsch.my.id')) {
+        const parts = hostname.split('.');
+        if (parts.length > 3) slug = parts[0];
+      } else if (hostname.includes('run.app') || hostname.includes('vercel.app')) {
+        const match = hostname.match(/pkbm[a-z0-9]+/i); // Diperbaiki dari 0-0 menjadi 0-9
+        if (match) slug = match[0];
+      }
+
+      if (!slug && !isMaster) {
+        customDomain = hostname;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user && !slug && !customDomain) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('school_id')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (profile?.school_id) {
+          slug = profile.school_id;
+        }
+      }
+
+      if (isMaster && !slug) {
+        setLoading(false);
+        return;
+      }
+
+      if (slug) {
+        await setSchoolBySlug(slug);
+      } else if (customDomain) {
+        try {
+          const { data, error: domainError } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('custom_domain', customDomain)
+            .single();
+            
+          if (!domainError && data) {
+            // REVISI: Menggunakan fungsi pembantu checkIsActive yang aman dari huruf kapital
+            if (!checkIsActive(data)) {
+              setError('Sekolah belum aktif');
+              setSchool(null);
+            } else {
+              const { data: registration } = await supabase
+                .from('registrations')
+                .select('status, school_name')
+                .eq('school_id', data.id || data.slug)
+                .maybeSingle();
+              
+              // REVISI: Menggunakan .toLowerCase()
+              const isVerified = registration && registration.status?.toLowerCase() === 'verified';
+
+              if (!isVerified) {
+                setIsBlocked(true);
+                setError('403: Layanan Nonaktif');
+                setSchool(null);
+                return;
+              }
+              const schoolName = registration.school_name;
+              const mappedData: School = {
+                ...data,
+                id: data.id || data.slug,
+                name: schoolName || data.nama || data.name,
+                accreditation: data.akreditasi || data.accreditation,
+                address: data.alamat || data.address,
+                adminEmail: data.adminEmail || data.admin_email,
+                logoUrl: data.logoUrl || data.logo_url,
+                themeColor: data.themeColor || data.theme_color,
+                expiryDate: data.expiryDate || data.expiry_date,
+                studentLimit: data.studentLimit || data.student_limit
+              };
+              setSchool(mappedData);
+            }
+          } else {
+            setError('Sekolah tidak ditemukan');
+          }
+        } catch (err) {
+          console.error('Custom domain resolution error:', err);
+          setError('Gagal memproses domain');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    resolveByHostname();
+  }, [setSchoolBySlug]);
+
+  return (
+    <SchoolContext.Provider value={{ school, loading, isMasterDomain, error, isBlocked, setSchoolBySlug }}>
+      {children}
+    </SchoolContext.Provider>
+  );
+}({ children }: { children: React.ReactNode }) {
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
