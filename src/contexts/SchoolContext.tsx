@@ -59,34 +59,48 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  // Fungsi resolusi utama berdasarkan Slug / Subdomain
-  const setSchoolBySlug = useCallback(async (slug: string) => {
-    const normalizedSlug = slug.toLowerCase();
+  // 1. Ubah select-nya (hapus deleted_at)
+const { data: registration, error: regError } = await supabase
+  .from('registrations')
+  .select('status, school_name, is_approved') // deleted_at dihapus dari sini
+  .eq('subdomain', normalizedSlug)
+  .maybeSingle();
 
-    if (currentSchoolSlugRef.current === normalizedSlug) return;
+console.log('DEBUG [SchoolContext] Registration lookup result:', registration, 'Error:', regError);
 
-    setLoading(true);
-    setError(null);
-    setIsBlocked(false);
-    try {
-      let { data, error: schoolError } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('id', normalizedSlug)
-        .single();
+if (regError || !registration) {
+  console.warn('DEBUG [SchoolContext] School not found in registrations:', normalizedSlug);
+  setIsBlocked(true);
+  setError('404: Sekolah tidak ditemukan');
+  setSchool(null);
+  return;
+}
 
-      if (schoolError) {
-        ({ data, error: schoolError } = await supabase
-            .from('schools')
-            .select('*')
-            .eq('slug', normalizedSlug)
-            .single());
-      }
+// 2. Hapus blok pengecekan registration.deleted_at !== null
+// Cukup cek status DELETED, SUSPENDED, dan ACTIVE seperti di bawah ini:
+if (registration.status === 'DELETED') {
+  console.warn('DEBUG [SchoolContext] School deleted:', normalizedSlug);
+  setIsBlocked(true);
+  setError('404: Sekolah sudah dihapus');
+  setSchool(null);
+  return;
+}
 
-      if (!schoolError && data) {
-        console.log('DEBUG [SchoolContext] Found school data:', data);
-        console.log('DEBUG [SchoolContext] Checking registration for subdomain:', normalizedSlug);
-        
+if (registration.status === 'SUSPENDED') {
+  console.warn('DEBUG [SchoolContext] School suspended:', normalizedSlug);
+  setIsBlocked(true);
+  setError('403: Layanan ditangguhkan sementara');
+  setSchool(null);
+  return;
+}
+
+if (registration.status !== 'ACTIVE' || registration.is_approved !== true) {
+  console.warn('DEBUG [SchoolContext] School not active/approved:', normalizedSlug);
+  setIsBlocked(true);
+  setError('403: Layanan belum aktif');
+  setSchool(null);
+  return;
+}        
         const { data: registration, error: regError } = await supabase
           .from('registrations')
           .select('status, school_name, deleted_at, is_approved')
