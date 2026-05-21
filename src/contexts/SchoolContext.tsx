@@ -198,4 +198,73 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           const { data, error: domainError } = await supabase
             .from('schools')
             .select('*')
-            .eq('custom_domain', customDomain
+            .eq('custom_domain', customDomain)
+            .single();
+
+          if (!domainError && data) {
+            const { data: registration, error: regError } = await supabase
+              .from('registrations')
+              .select('status, school_name, deleted_at, is_approved')
+              .eq('subdomain', data.slug || data.id)
+              .maybeSingle();
+
+            if (regError || !registration) {
+              setIsBlocked(true);
+              setError('404: Sekolah tidak ditemukan');
+              setSchool(null);
+              return;
+            }
+
+            if (registration.deleted_at !== null || registration.status === 'DELETED') {
+              setIsBlocked(true);
+              setError('404: Sekolah sudah dihapus');
+              setSchool(null);
+              return;
+            }
+
+            if (registration.status === 'SUSPENDED') {
+              setIsBlocked(true);
+              setError('403: Layanan ditangguhkan sementara');
+              setSchool(null);
+              return;
+            }
+
+            if (registration.status !== 'ACTIVE' || registration.is_approved !== true) {
+              setIsBlocked(true);
+              setError('403: Layanan belum aktif');
+              setSchool(null);
+              return;
+            }
+
+            setSchool(mapSchoolData(data, registration));
+          } else {
+            setError('Sekolah tidak ditemukan');
+          }
+        } catch (err) {
+          console.error('Custom domain resolution error:', err);
+          setError('Gagal memproses domain');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    resolveByHostname();
+  }, [setSchoolBySlug]);
+
+  return (
+    <SchoolContext.Provider value={{ school, loading, isMasterDomain, error, isBlocked, setSchoolBySlug }}>
+      {children}
+    </SchoolContext.Provider>
+  );
+}
+
+export const useSchool = () => {
+  const context = useContext(SchoolContext);
+  if (context === undefined) {
+    throw new Error('useSchool must be used within a SchoolProvider');
+  }
+  return context;
+};
