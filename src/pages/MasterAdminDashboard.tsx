@@ -186,6 +186,35 @@ export default function MasterAdminDashboard() {
 
         if (existingProfile) {
             // Update existing profile with new school_id and role Admin
+           const emailClean = reg.admin_email.toLowerCase().trim();
+        let finalAuthUid = existingProfile?.id || null;
+
+        // JIKA USER AUTH BELUM ADA DI DATABASE, BUATKAN OTOMATIS SEKARANG
+        if (!finalAuthUid) {
+            console.log('DEBUG [Approval] Mendaftarkan akun Supabase Auth otomatis untuk:', emailClean);
+            
+            // Membuat user di Supabase Auth (Bypass link konfirmasi email)
+            const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+                email: emailClean,
+                password: reg.password || 'Anlebakwangi19%', // Ambil password dari registrasi atau default
+                email_confirm: true // Langsung aktif detik ini juga
+            });
+
+            if (authError) {
+                console.error('DEBUG [Approval] Auth Creation Fatal Error:', authError);
+                toast.error(`Gagal membuat akun login otomatis: ${authError.message}`);
+                return;
+            }
+
+            if (authData?.user) {
+                finalAuthUid = authData.user.id; // Ambil UUID hasil generate Supabase Auth
+                console.log('DEBUG [Approval] Akun Auth sukses dibuat. UID:', finalAuthUid);
+            }
+        }
+
+        // PROSES SYNC KE TABEL PROFILES DATABASE
+        if (existingProfile) {
+            // Update profile yang sudah ada
             const { error: profileError } = await supabase
                 .from('profiles')
                 .update({ 
@@ -199,11 +228,12 @@ export default function MasterAdminDashboard() {
             
             if (profileError) console.error('DEBUG [Approval] Profile Update Error:', profileError);
         } else {
-            // Create new profile record (auth will be handled by Supabase Auth if they sign up/login)
+            // Insert profile baru dengan ID yang SAMA dengan UUID Supabase Auth (wajib sinkron)
             const { error: profileError } = await supabase
                 .from('profiles')
                 .insert([{
-                    email: reg.admin_email.toLowerCase().trim(),
+                    id: finalAuthUid, // <--- KUNCI UTAMA: ID Profile disamakan dengan ID Auth Supabase
+                    email: emailClean,
                     nama: reg.admin_name,
                     role: 'Admin',
                     school_id: slugVal,
@@ -213,9 +243,21 @@ export default function MasterAdminDashboard() {
             
             if (profileError) console.error('DEBUG [Approval] Profile Insert Error:', profileError);
         }
+
+        // UPDATE JUGA TABEL REGISTRATIONS AGAR STATUSNYA BERUBAH DAN AUTH_UID TERISI
+        const { error: regUpdateError } = await supabase
+            .from('registrations')
+            .update({
+                status: 'verified', // Set status menjadi verified (huruf kecil sesuai tombol UI kamu)
+                is_approved: true,
+                auth_uid: finalAuthUid // Mengisi kolom auth_uid agar tidak NULL lagi
+            })
+            .eq('id', reg.id);
+
+        if (regUpdateError) console.error('DEBUG [Approval] Registrations Update Error:', regUpdateError);
       }
 
-      toast.success(`${reg.school_name} berhasil diaktifkan!`);
+      toast.success(`${reg.school_name} berhasil diaktifkan & akun otomatis siap!`);
       fetchData();
     } catch (error: any) {
       console.error('DEBUG [Approval] Fatal Error:', error);
@@ -224,7 +266,6 @@ export default function MasterAdminDashboard() {
       setProcessingId(null);
     }
   };
-
   const handleRejectSchool = async (id: string) => {
     if (!window.confirm('Tolak pendaftaran ini?')) return;
     
