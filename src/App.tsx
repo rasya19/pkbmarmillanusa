@@ -304,11 +304,17 @@ function AppContent() {
 
   if (isBlocked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-brand-sidebar">
-        <div className="text-center p-8">
-          <h1 className="text-6xl font-black italic">403</h1>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-brand-sidebar p-6 text-center">
+        <div className="text-center p-8 max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-100">
+          <h1 className="text-6xl font-black italic text-red-500">403</h1>
           <p className="text-xl font-bold mt-4">Layanan Nonaktif</p>
-          <p className="text-sm mt-2 text-slate-500">Sekolah atau institusi Anda saat ini tidak aktif.</p>
+          
+          {/* MENCETAK ERROR DARI CONTEXT */}
+          <p className="text-sm mt-2 text-red-600 font-medium">
+            {error || "Sekolah atau institusi Anda saat ini tidak aktif."}
+          </p>
+          
+          <p className="text-xs text-slate-400 mt-4">Hubungi Superadmin jika ini merupakan kesalahan sistem.</p>
         </div>
       </div>
     );
