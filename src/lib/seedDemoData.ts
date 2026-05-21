@@ -11,8 +11,9 @@ export async function seedDemoData() {
         npsn: '12345678',
         subscription_plan: 'Silver',
         status: 'active',
-        adminEmail: 'demo.silver@example.com',
-        createdAt: new Date().toISOString()
+        // SINKRONISASI NAMA KOLOM KE SNAKE_CASE DATABASE
+        admin_email: 'demo.silver@example.com', 
+        created_at: new Date().toISOString()
       },
       {
         id: 'demo-gold',
@@ -21,8 +22,9 @@ export async function seedDemoData() {
         npsn: '87654321',
         subscription_plan: 'Gold',
         status: 'active',
-        adminEmail: 'demo.gold@example.com',
-        createdAt: new Date().toISOString()
+        // SINKRONISASI NAMA KOLOM KE SNAKE_CASE DATABASE
+        admin_email: 'demo.gold@example.com',
+        created_at: new Date().toISOString()
       },
       {
         id: 'demo-platinum',
@@ -31,17 +33,22 @@ export async function seedDemoData() {
         npsn: '11223344',
         subscription_plan: 'Platinum',
         status: 'active',
-        adminEmail: 'demo.platinum@example.com',
-        createdAt: new Date().toISOString()
+        // SINKRONISASI NAMA KOLOM KE SNAKE_CASE DATABASE
+        admin_email: 'demo.platinum@example.com',
+        created_at: new Date().toISOString()
       }
     ];
 
-    const { error } = await supabase.from('schools').insert(demoSchools);
+    // MENGGUNAKAN UPSERT AGAR JIKA DATA SUDAH ADA, AKAN DI-UPDATE (TIDAK ERROR BENTROK)
+    const { error } = await supabase
+      .from('schools')
+      .upsert(demoSchools, { onConflict: 'id' });
+
     if (error) throw error;
     
     toast.success('Data demo berhasil di-seeding!');
   } catch (error: any) {
     console.error('Seed error:', error);
-    toast.error('Gagal seeding data: ' + error.message);
+    toast.error('Gagal seeding data: ' + (error.message || 'Error tidak dikenal'));
   }
 }
