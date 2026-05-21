@@ -57,7 +57,6 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       expiryDate: schoolData.expiryDate || schoolData.expiry_date,
       studentLimit: schoolData.studentLimit || schoolData.student_limit
     };
-  };
 
   // 1. Ubah select-nya (hapus deleted_at)
 const { data: registration, error: regError } = await supabase
