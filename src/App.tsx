@@ -275,9 +275,14 @@ function AppContent() {
             <span className="text-3xl font-black italic text-red-600">403</span>
           </div>
           <h1 className="text-xl font-black tracking-tight text-slate-900 uppercase italic">Layanan Nonaktif</h1>
-          <p className="font-bold text-red-600 text-xs mt-1 uppercase tracking-wide">Lembaga Belum Terverifikasi atau Sudah Dihapus</p>
+          
+          {/* UBAH DI BARIS INI AGAR MENCETAK ERROR SECARA DINAMIS */}
+          <p className="font-bold text-red-600 text-xs mt-1 uppercase tracking-wide">
+            {blockedMessage || "Lembaga Belum Terverifikasi atau Sudah Dihapus"}
+          </p>
+          
           <p className="text-xs text-slate-500 leading-relaxed mt-4">
-            Portal ini tidak lagi aktif atau pendaftarannya telah dicabut atau dinonaktifkan secara permanen oleh Superadmin Rasyatech.
+            Silakan hubungi admin Rasyatech untuk informasi lebih lanjut mengenai status langganan atau aktivasi layanan Anda.
           </p>
           <div className="mt-8 border-t border-slate-100 pt-5">
             <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Rasyatech Digital Systems</p>
@@ -286,7 +291,6 @@ function AppContent() {
       </div>
     );
   }
-
   if (isVerifying) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
