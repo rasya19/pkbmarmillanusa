@@ -59,7 +59,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  // Fungsi resolusi utama berdasarkan Slug / Subdomain (SUDAH FIX ASYNC & TANPA DELETED_AT)
+  // Fungsi resolusi utama berdasarkan Slug / Subdomain
   const setSchoolBySlug = useCallback(async (slug: string) => {
     const normalizedSlug = slug.toLowerCase();
 
@@ -67,7 +67,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true);
     setError(null);
-    setIsBlocked(false);
+    setIsBlocked(false); 
+    
     try {
       let { data, error: schoolError } = await supabase
         .from('schools')
@@ -85,30 +86,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
       if (!schoolError && data) {
         console.log('DEBUG [SchoolContext] Found school data:', data);
-        console.log('DEBUG [SchoolContext] Checking registration for subdomain:', normalizedSlug);
         
-       // Ambil data registrasi (tanpa deleted_at karena kolomnya tidak ada di DB)
         const { data: registration, error: regError } = await supabase
           .from('registrations')
           .select('status, school_name, is_approved')
           .eq('subdomain', normalizedSlug)
           .maybeSingle();
 
-        console.log('DEBUG [SchoolContext] Registration lookup result:', registration, 'Error:', regError);
-
         if (regError || !registration) {
-          console.warn('DEBUG [SchoolContext] School not found in registrations:', normalizedSlug);
           setIsBlocked(true);
           setError('404: Sekolah tidak ditemukan');
           setSchool(null);
           return;
         }
 
-        // Ambil status dan paksa ke huruf kapital agar aman dari variasi penulisan di DB
         const regStatus = registration.status?.toUpperCase();
 
         if (regStatus === 'DELETED') {
-          console.warn('DEBUG [SchoolContext] School deleted:', normalizedSlug);
           setIsBlocked(true);
           setError('404: Sekolah sudah dihapus');
           setSchool(null);
@@ -116,27 +110,39 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (regStatus === 'SUSPENDED') {
-          console.warn('DEBUG [SchoolContext] School suspended:', normalizedSlug);
           setIsBlocked(true);
           setError('403: Layanan ditangguhkan sementara');
           setSchool(null);
           return;
         }
 
-        // BARIS UTAMA PERBAIKAN: Sekarang menerima status 'ACTIVE' ataupun 'VERIFIED'
+        // Menerima status ACTIVE maupun VERIFIED
         const isApprovedAndValid = (regStatus === 'ACTIVE' || regStatus === 'VERIFIED') && registration.is_approved === true;
 
         if (!isApprovedAndValid) {
-          console.warn('DEBUG [SchoolContext] School not active/approved:', normalizedSlug);
           setIsBlocked(true);
           setError('403: Layanan belum aktif');
           setSchool(null);
           return;
         }
 
-        setSchool(mapSchoolData(data, registration));
         setIsBlocked(false);
         setError(null);
+        setSchool(mapSchoolData(data, registration));
+      } else {
+        setSchool(null);
+        setError('Sekolah tidak ditemukan');
+        setIsBlocked(true);
+      }
+    } catch (err) {
+      console.error('Fetch school error:', err);
+      setError('Gagal memuat data sekolah');
+      setIsBlocked(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Efek inisialisasi berdasarkan Hostname saat aplikasi dimuat
   useEffect(() => {
     const resolveByHostname = async () => {
@@ -196,7 +202,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           if (!domainError && data) {
             const { data: registration, error: regError } = await supabase
               .from('registrations')
-              .select('status, school_name, is_approved') // deleted_at dihapus dari sini juga
+              .select('status, school_name, is_approved')
               .eq('subdomain', data.slug || data.id)
               .maybeSingle();
 
@@ -207,27 +213,33 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               return;
             }
 
-            if (registration.status === 'DELETED') {
+            const domainRegStatus = registration.status?.toUpperCase();
+
+            if (domainRegStatus === 'DELETED') {
               setIsBlocked(true);
               setError('404: Sekolah sudah dihapus');
               setSchool(null);
               return;
             }
 
-            if (registration.status === 'SUSPENDED') {
+            if (domainRegStatus === 'SUSPENDED') {
               setIsBlocked(true);
               setError('403: Layanan ditangguhkan sementara');
               setSchool(null);
               return;
             }
 
-            if (registration.status !== 'ACTIVE' || registration.is_approved !== true) {
+            const isDomainApprovedAndValid = (domainRegStatus === 'ACTIVE' || domainRegStatus === 'VERIFIED') && registration.is_approved === true;
+
+            if (!isDomainApprovedAndValid) {
               setIsBlocked(true);
               setError('403: Layanan belum aktif');
               setSchool(null);
               return;
             }
 
+            setIsBlocked(false);
+            setError(null);
             setSchool(mapSchoolData(data, registration));
           } else {
             setError('Sekolah tidak ditemukan');
