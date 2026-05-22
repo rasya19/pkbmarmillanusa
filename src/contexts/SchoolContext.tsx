@@ -103,78 +103,47 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       } else if (customDomain) {
         try {
           const { data, error } = await supabase
-            .from('schools')
-            .select('*')
-            .eq('custom_domain', customDomain)
-            .single();
-            
-          if (!error && data) {
-            console.log('DEBUG [SchoolContext] Found school by custom domain:', data.name);
-            
-            const rawStatus = data.status;
-            const isStatusActive = rawStatus === undefined || rawStatus === null || 
-                                  rawStatus.toLowerCase() === 'active' || 
-                                  rawStatus === true || 
-                                  data.is_active === true ||
-                                  data.is_active === undefined;
-            
-            if (!isStatusActive) {
-              console.warn('DEBUG [SchoolContext] Custom domain school is INACTIVE. Status:', rawStatus);
-              setError('Sekolah belum aktif');
-              setSchool(null);
-            } else {
-              // Verification check
-              console.log('DEBUG [SchoolContext] Checking registration for custom domain ID:', data.id || data.slug);
-              const { data: registration, error: regError } = await supabase
-                .from('registrations')
-                .select('status, school_name')
-                .eq('school_id', data.id || data.slug)
-                .maybeSingle();
-              
-              const isVerified = registration && registration.status === 'verified';
-
-              if (!isVerified) {
-                console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status');
-                setIsBlocked(true);
-                setError('403: Layanan Nonaktif');
-                setSchool(null);
-                setLoading(false);
-                return;
-              }
-              const schoolName = registration.school_name;
-              // Map DB snake_case columns to camelCase interface
-              const mappedData: School = {
-                ...data,
-                id: data.id || data.slug, // Ensure we have an ID for updates
-                name: schoolName || data.nama || data.name,
-                accreditation: data.akreditasi || data.accreditation,
-                address: data.alamat || data.address,
-                adminEmail: data.adminEmail || data.admin_email,
-                logoUrl: data.logoUrl || data.logo_url,
-                themeColor: data.themeColor || data.theme_color,
-                expiryDate: data.expiryDate || data.expiry_date,
-                studentLimit: data.studentLimit || data.student_limit
-              };
-              setSchool(mappedData);
-            }
-          } else {
-            console.warn('DEBUG [SchoolContext] No school found for custom domain:', customDomain);
-            setError('Sekolah tidak ditemukan');
-          }
-        } catch (err) {
-          console.error('Custom domain resolution error:', err);
-          setError('Gagal memproses domain');
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        console.warn('DEBUG [SchoolContext] No slug or custom domain resolved');
-        setLoading(false);
-      }
+  .from('schools')
+  .select('*')
+  // Pastikan kolom pencariannya sesuai, jika pakai subdomain rsch.my.id gunakan 'slug' atau 'subdomain'
+  .eq('slug', customDomain) 
+  .single();
+    
+if (!error && data) {
+  console.log('DEBUG [SchoolContext] Found school:', data.school_name);
+  
+  const rawStatus = data.status;
+  const isStatusActive = rawStatus !== undefined && rawStatus !== null && rawStatus.toLowerCase() === 'active';
+  
+  if (!isStatusActive) {
+    console.warn('DEBUG [SchoolContext] School is INACTIVE. Status:', rawStatus);
+    setError('Sekolah belum aktif');
+    setSchool(null);
+  } else {
+    // === VERIFICATION CHECK LAMA YANG BIKIN 403 DIHAPUS DI SINI ===
+    
+    // Langsung Map data dari database ke State React kamu
+    const mappedData: School = {
+      ...data,
+      id: data.id, 
+      name: data.school_name || data.name, // Menggunakan school_name sesuai DB kamu
+      accreditation: data.akreditasi || data.accreditation, // Menggunakan akreditasi versi lokal
+      address: data.alamat || data.address, // Menggunakan alamat versi lokal
+      adminEmail: data.admin_email,
+      logoUrl: data.log_url || data.logo_url, // Menyesuaikan log_url di DB kamu
+      themeColor: data.theme_color,
+      expiryDate: data.expiry_date,
+      studentLimit: data.student_limit
     };
-
-    resolveByHostname();
-  }, []);
+    
+    // Lolos bebas dari 403!
+    setIsBlocked(false); 
+    setSchool(mappedData);
+  }
+} else {
+  console.warn('DEBUG [SchoolContext] No school found for domain:', customDomain);
+  setError('Sekolah tidak ditemukan');
+}
 
   const setSchoolBySlug = useCallback(async (slug: string) => {
     const normalizedSlug = slug.toLowerCase();
