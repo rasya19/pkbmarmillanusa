@@ -5,6 +5,7 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
@@ -15,20 +16,23 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'inline',
+      includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
         short_name: "LMS Armilla",
         name: "LMS PKBM Armilla Nusa",
         description: "Platform Layanan Belajar Masyarakat PKBM Armilla Nusa",
         icons: [
           {
-            src: "icon-192.png",
+            src: "/icon-192.png",
             type: "image/png",
-            sizes: "192x192"
+            sizes: "192x192",
+            purpose: "any"
           },
           {
-            src: "icon-512.png",
+            src: "/icon-512.png",
             type: "image/png",
-            sizes: "512x512"
+            sizes: "512x512",
+            purpose: "any"
           }
         ],
         start_url: "/",
@@ -38,21 +42,8 @@ export default defineConfig({
         orientation: "portrait"
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // <--- Menaikkan batas limit menjadi 5 MB
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/embed\.tawk\.to\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'tawk-to-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 hari
-              }
-            }
-          }
-        ]
+        maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // Naikkan ke 7 MB agar aman
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
       }
     })
   ]
