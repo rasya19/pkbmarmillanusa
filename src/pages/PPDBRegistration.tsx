@@ -166,19 +166,25 @@ export default function PPDBRegistration() {
             <React.Fragment key={s.id}>
               <div className="flex flex-col items-center gap-2">
                 <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500",
+                  "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500",
                   step >= s.id ? "bg-brand-sidebar text-white shadow-lg shadow-brand-sidebar/20" : "bg-slate-100 text-slate-400"
                 )}>
-                  <s.icon className="w-5 h-5" />
+                  <s.icon className="w-6 h-6" />
                 </div>
-                <span className={cn(
-                  "text-[8px] font-black uppercase tracking-widest italic",
-                  step >= s.id ? "text-brand-sidebar" : "text-slate-400"
-                )}>{s.title}</span>
+                <div className="text-center">
+                  <p className={cn(
+                    "text-[8px] font-black uppercase tracking-widest italic",
+                    step >= s.id ? "text-brand-sidebar" : "text-slate-400"
+                  )}>Kategori {s.id}</p>
+                  <p className={cn(
+                    "text-[9px] font-bold uppercase italic",
+                    step >= s.id ? "text-brand-accent" : "text-slate-300"
+                  )}>{s.title}</p>
+                </div>
               </div>
               {idx < steps.length - 1 && (
                 <div className={cn(
-                  "w-12 h-[2px] -mt-6 transition-all duration-500",
+                  "w-12 h-[2px] -mt-8 transition-all duration-500",
                   step > s.id ? "bg-brand-sidebar" : "bg-slate-100"
                 )} />
               )}
@@ -290,6 +296,36 @@ export default function PPDBRegistration() {
                          type="date" 
                          value={formData.birth_date} 
                          onChange={(e) => setFormData({...formData, birth_date: e.target.value})} 
+                         className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold outline-none focus:border-brand-accent transition-all italic"
+                       />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic flex items-center gap-2">
+                         <Hash className="w-3 h-3 text-brand-accent" /> Agama
+                       </label>
+                       <select 
+                         value={formData.religion} 
+                         onChange={(e) => setFormData({...formData, religion: e.target.value})} 
+                         className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold outline-none focus:border-brand-accent transition-all italic appearance-none"
+                       >
+                         {['Islam', 'Kristen', 'Katolik', 'Hindu', 'Budha', 'Khonghucu'].map(religion => (
+                           <option key={religion} value={religion}>{religion}</option>
+                         ))}
+                       </select>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic flex items-center gap-2">
+                         <MapPin className="w-3 h-3 text-brand-accent" /> Kode Pos
+                       </label>
+                       <input 
+                         type="text" 
+                         maxLength={5}
+                         value={formData.kode_pos} 
+                         onChange={(e) => setFormData({...formData, kode_pos: e.target.value.replace(/\D/g, '')})} 
+                         placeholder="5 digit kode pos..." 
                          className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold outline-none focus:border-brand-accent transition-all italic"
                        />
                     </div>
