@@ -4,7 +4,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
-  base: '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
@@ -15,7 +14,6 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'inline',
-      strategies: 'generateSW',
       manifest: {
         short_name: "LMS Armilla",
         name: "LMS PKBM Armilla Nusa",
@@ -39,16 +37,15 @@ export default defineConfig({
         orientation: "portrait"
       },
       workbox: {
-        // MEMAKSA WORKBOX MENERIMA SEMUA UKURAN FILE TAILWIND V4
-        maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, 
-        // Hanya cache aset dasar, biarkan Tailwind CSS dimuat secara dinamis agar tidak berantakan
-        globPatterns: ['**/*.{html,ico,png,svg}'],
+        maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
+        // Taktik paling aman: Matikan precache otomatis, biarkan browser mengambil file CSS/JS secara alami
+        globPatterns: [], 
         runtimeCaching: [
           {
-            urlPattern: ({ request }) => request.destination === 'style' || request.destination === 'script',
+            urlPattern: ({ request }) => true, // Izinkan semua file lewat tanpa disandera cache buntu
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'core-scripts-styles'
+              cacheName: 'universal-cache'
             }
           }
         ]
