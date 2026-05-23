@@ -31,6 +31,7 @@ import Kelas from './pages/Kelas';
 import KenaikanKelas from './pages/KenaikanKelas';
 import SKL from './pages/SKL';
 import PPDB from './pages/PPDB';
+import PPDBRegistration from './pages/PPDBRegistration';
 import PendingActivation from './pages/PendingActivation';
 import RegisterSchool from './pages/RegisterSchool';
 import RegisterUser from './pages/RegisterUser';
@@ -151,8 +152,9 @@ function AppContent() {
   const { school, loading, isBlocked, isMasterDomain } = useSchool();
   const location = useLocation();
   const isSubroutePath = location.pathname.startsWith('/s/') || location.pathname.startsWith('/dashboard');
+  const isPpdbPath = location.pathname === '/ppdb' || location.pathname.startsWith('/ppdb/');
 
-  if (isBlocked) {
+  if (isBlocked && !isPpdbPath) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-red-50 text-slate-800 font-sans p-6 text-center">
         <div className="max-w-md w-full border border-red-100 bg-white rounded-3xl shadow-xl p-8">
@@ -174,7 +176,7 @@ function AppContent() {
 
   // Only show full page loader on initial mount if we are not on a subroute 
   // and we haven't determined if it's a master domain yet
-  if (loading && !isSubroutePath && !isMasterDomain) {
+  if (loading && !isSubroutePath && !isMasterDomain && !isPpdbPath) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="flex flex-col items-center gap-4">
@@ -198,6 +200,7 @@ function AppContent() {
       <Route path="/pending-activation" element={<PendingActivation />} />
       <Route path="/register-school" element={<RegisterSchool />} />
       <Route path="/register-user" element={<RegisterUser />} />
+      <Route path="/ppdb" element={<PPDBRegistration />} />
       
       {/* Portal Dashboard Routes - Shared by all domains */}
       <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>

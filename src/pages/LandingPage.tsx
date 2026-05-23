@@ -93,6 +93,12 @@ export default function LandingPage() {
                 {link.name}
               </a>
             ))}
+            <Link 
+              to="/ppdb" 
+              className="text-[11px] font-black text-brand-accent hover:text-brand-sidebar transition-colors uppercase tracking-[0.2em] italic flex items-center gap-2 group/ppdb"
+            >
+              Daftar PPDB <ArrowRight className="w-3 h-3 group-hover/ppdb:translate-x-1 transition-transform" />
+            </Link>
             <Link to="/login" state={{ role: 'Admin' }} className="bg-brand-sidebar text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent hover:scale-105 transition-all shadow-xl shadow-brand-sidebar/20 italic">
               Portal Masuk
             </Link>
@@ -127,6 +133,13 @@ export default function LandingPage() {
                   </a>
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
+                  <Link 
+                    to="/ppdb" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full bg-brand-accent text-white py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic"
+                  >
+                    Daftar PPDB Sekarang <GraduationCap className="w-4 h-4 text-brand-sidebar" />
+                  </Link>
                   <Link 
                     to="/login" 
                     state={{ role: 'Admin' }}
@@ -167,8 +180,17 @@ export default function LandingPage() {
               <p className="text-xl text-slate-500 font-medium italic mb-12 max-w-xl leading-relaxed">
                 {heroSub}
               </p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4 mb-14">
+                <Link to="/ppdb" className="w-full sm:w-auto bg-brand-accent text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-brand-accent/30 flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all italic group">
+                  DAFTAR PPDB SEKARANG <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <a href="#tentang-kami" className="w-full sm:w-auto bg-white border border-brand-border text-brand-sidebar px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-50 transition-all italic">
+                  PELAJARI LEBIH LANJUT
+                </a>
+              </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12 border-t border-slate-100 pt-12">
                  <Link to="/login" state={{ role: 'Admin' }} className="bg-brand-sidebar text-white p-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 flex flex-col items-center justify-center gap-3 group/btn hover:scale-105 transition-all italic border border-white/10">
                     <ShieldCheck className="w-6 h-6 text-brand-accent" />
                     <span>PORTAL ADMIN</span>
