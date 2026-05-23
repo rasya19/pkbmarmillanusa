@@ -352,7 +352,7 @@ export default function Layout() {
       minPlan: 'Silver',
       subItems: [
         { icon: FileBarChart, label: 'Kelola Ujian', path: `${prefix}/dashboard/soal`, minPlan: 'Silver' },
-        { icon: FileBarChart, label: 'Bank Soal Master', path: `${prefix}/dashboard/bank-soal`, minPlan: 'Silver' }, // Ambil ikon yang pasti aman dulu
+        { icon: FileBarChart, label: 'Bank Soal Master', path: `${prefix}/dashboard/soal`, minPlan: 'Silver' },
         { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian`, minPlan: 'Silver' },
         { icon: Eye, label: 'Monitoring Live', path: `${prefix}/dashboard/hasil-ujian`, minPlan: 'Silver' },
         { icon: Check, label: 'Input & Rekap Nilai', path: `${prefix}/dashboard/nilai`, minPlan: 'Silver' },
