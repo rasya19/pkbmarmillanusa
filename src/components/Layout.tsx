@@ -347,7 +347,6 @@ export default function Layout() {
             ]
           },
           {
-            {
             icon: ClipboardCheck,
             label: 'Ujian Online',
             minPlan: 'Silver',
