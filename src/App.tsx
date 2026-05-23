@@ -147,125 +147,22 @@ function ComingSoon() {
   );
 }
 
+// =========================================================================
+// PROSES BYPASS UTAMA: AMEDMENT LOCK PADA APP CONTENT
+// =========================================================================
 function AppContent() {
-  const { school, loading, isBlocked } = useSchool();
+  const { school, loading } = useSchool();
   const location = useLocation();
   const isSubroutePath = location.pathname.startsWith('/s/') || location.pathname.startsWith('/dashboard');
 
-  const [isVerifying, setIsVerifying] = useState(true);
-  const [securityBlocked, setSecurityBlocked] = useState(false);
-  const [blockedMessage, setBlockedMessage] = useState('');
+  // Kita paksa isVerifying langsung false dan securityBlocked langsung false kawan!
+  const [isVerifying] = useState(false);
+  const [securityBlocked] = useState(false);
 
-  useEffect(() => {
-    const verifyAccess = async () => {
-      const hostname = window.location.hostname.toLowerCase().trim();
-      const subdomain = hostname.split('.')[0];
-      
-      console.log('DEBUG [Security AppContent] Resolving hostname:', hostname, 'Subdomain:', subdomain);
-
-      // Exempt standard main domains, localhost, and system templates/builders
-      const isExempt = 
-        hostname === 'localhost' || 
-        hostname === '127.0.0.1' || 
-        hostname === 'rsch.my.id' || 
-        hostname === 'www.rsch.my.id' || 
-        hostname.includes('rasyatech') ||
-        hostname.includes('ais-dev') ||
-        hostname.includes('ais-pre') ||
-        hostname.includes('asia-southeast1.run.app') ||
-        hostname === '';
-
-      if (isExempt) {
-        setIsVerifying(false);
-        return;
-      }
-
-      try {
-        let registration = null;
-
-        // Try 'slug' matching
-        try {
-          const { data, error } = await supabase
-            .from('registrations')
-            .select('status, school_name, slug')
-            .eq('slug', subdomain)
-            .maybeSingle();
-          if (!error && data) registration = data;
-        } catch (e) {
-          console.warn('DEBUG [Security AppContent] slug match error fallback:', e);
-        }
-
-        // Try 'subdomain' matching
-        if (!registration) {
-          try {
-            const { data, error } = await supabase
-              .from('registrations')
-              .select('*')
-              .eq('subdomain', subdomain)
-              .maybeSingle();
-            if (!error && data) registration = data;
-          } catch (e) {
-            console.warn('DEBUG [Security AppContent] subdomain match error fallback:', e);
-          }
-        }
-
-        // Try 'subdomain_prefix' matching
-        if (!registration) {
-          try {
-            const { data, error } = await supabase
-              .from('registrations')
-              .select('*')
-              .eq('subdomain_prefix', subdomain)
-              .maybeSingle();
-            if (!error && data) registration = data;
-          } catch (e) {
-            console.warn('DEBUG [Security AppContent] subdomain_prefix match error fallback:', e);
-          }
-        }
-
-        // Try 'school_id' matching
-        if (!registration) {
-          try {
-            const { data, error } = await supabase
-              .from('registrations')
-              .select('*')
-              .eq('school_id', subdomain)
-              .maybeSingle();
-            if (!error && data) registration = data;
-          } catch (e) {
-            console.warn('DEBUG [Security AppContent] school_id match error fallback:', e);
-          }
-        }
-
-        console.log('DEBUG [Security AppContent] Verification result:', registration);
-
-        if (!registration) {
-          setSecurityBlocked(true);
-          setBlockedMessage("403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
-          setIsVerifying(false);
-          return;
-        }
-
-        const status = (registration.status || '').toLowerCase().trim();
-        const isValidStatus = status === 'verified' || status === 'approved';
-
-        if (!isValidStatus) {
-          setSecurityBlocked(true);
-          setBlockedMessage("403: Layanan Nonaktif - Lembaga Belum Terverifikasi atau Sudah Dihapus");
-          setIsVerifying(false);
-          return;
-        }
-
-        // Registration exists and is active. Pass to default School resolver
-        setIsVerifying(false);
-      } catch (err) {
-        console.error('DEBUG [Security AppContent] Critical error verifying:', err);
-        setIsVerifying(false);
-      }
-    };
-
-    verifyAccess();
-  }, []);
+  // Jika kamu mau memaksa bypass halaman pending-activation agar tidak mengunci web
+  if (location.pathname === '/pending-activation') {
+    return <Navigate to="/login" replace />;
+  }
 
   if (securityBlocked) {
     return (
@@ -298,18 +195,6 @@ function AppContent() {
     );
   }
 
-  if (isBlocked) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-brand-sidebar">
-        <div className="text-center p-8">
-          <h1 className="text-6xl font-black italic">403</h1>
-          <p className="text-xl font-bold mt-4">Layanan Nonaktif</p>
-          <p className="text-sm mt-2 text-slate-500">Sekolah atau institusi Anda saat ini tidak aktif.</p>
-        </div>
-      </div>
-    );
-  }
-
   if (loading && !isSubroutePath) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
@@ -331,10 +216,10 @@ function AppContent() {
       <Route path="/ujian/:id" element={<UjianSiswa />} />
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
-      <Route path="/pending-activation" element={<PendingActivation />} />
+      <Route path="/pending-activation" element={<Login />} /> {/* Ganti target komponen ke Login kawan */}
       <Route path="/register-user" element={<RegisterUser />} />
       
-      {/* If subdomain/custom domain is detected, allow accessing dashboard routes at root */}
+      {/* Dashboard Routes Utama */}
       {school && (
         <>
           <Route path="login" element={<Login />} />
@@ -377,14 +262,13 @@ function AppContent() {
         </>
       )}
 
-      {/* Multi-tenancy Routes (Legacy/Fallback) */}
+      {/* Fallback Multi-tenancy */}
       <Route path="/s/:schoolSlug" element={<SchoolLoader />}>
          <Route index element={<LandingPage />} />
          <Route path="login" element={<Login />} />
          <Route path="ujian/:id" element={<UjianSiswa />} />
          <Route path="dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
             <Route index element={<Dashboard />} />
-            {/* ... other child routes ... */}
             <Route path="course/:id" element={<CourseDetail />} />
             <Route path="data-siswa" element={<DataSiswa />} />
             <Route path="soal" element={<BankSoal />} />
@@ -426,9 +310,7 @@ function AppContent() {
       </Route>
 
       <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
-        {/* These might be global dashboard or school dashboard if context exists */}
         <Route index element={<Dashboard />} />
-        {/* ... */}
         <Route path="course/:id" element={<CourseDetail />} />
         <Route path="data-siswa" element={<DataSiswa />} />
         <Route path="soal" element={<BankSoal />} />
