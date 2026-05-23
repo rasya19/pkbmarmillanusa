@@ -38,13 +38,15 @@ export default function Nilai() {
 
   const [catatan, setCatatan] = useState(localStorage.getItem('school_catatan_wali') || "Budi menunjukkan progres yang sangat baik pada mata pelajaran produktif (Keterampilan). Terus tingkatkan kehadiran pada sesi tutorial online Bahasa Inggris.");
 
-  useEffect(() => {
-    localStorage.setItem('school_nilai_list', JSON.stringify(nilaiList));
-  }, [nilaiList]);
+  // MATIKAN DUA BLOK INI SEMENTARA UNTUK MENGHENTIKAN LOOPING:
 
-  useEffect(() => {
-    localStorage.setItem('school_catatan_wali', catatan);
-  }, [catatan]);
+//  useEffect(() => {
+//    localStorage.setItem('school_nilai_list', JSON.stringify(nilaiList));
+//  }, [nilaiList]);
+
+//  useEffect(() => {
+//    localStorage.setItem('school_catatan_wali', catatan);
+//  }, [catatan]);
 
   const handleAddMapel = () => {
     setNilaiList([...nilaiList, { mapel: 'Mata Pelajaran Baru', uts: 0, uas: 0, tugas: 0, rata: 0 }]);
