@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   base: '/',
   resolve: {
@@ -16,6 +15,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'inline',
+      strategies: 'generateSW',
       manifest: {
         short_name: "LMS Armilla",
         name: "LMS PKBM Armilla Nusa",
@@ -39,18 +39,16 @@ export default defineConfig({
         orientation: "portrait"
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 7 * 1024 * 1024,
-        // Taktik NetworkFirst: Ambil file CSS/JS terbaru langsung dari server Vercel agar tidak berantakan
+        // MEMAKSA WORKBOX MENERIMA SEMUA UKURAN FILE TAILWIND V4
+        maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, 
+        // Hanya cache aset dasar, biarkan Tailwind CSS dimuat secara dinamis agar tidak berantakan
+        globPatterns: ['**/*.{html,ico,png,svg}'],
         runtimeCaching: [
           {
-            urlPattern: /\.(?:js|css|html|svg|png)$/,
+            urlPattern: ({ request }) => request.destination === 'style' || request.destination === 'script',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'assets-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 1 hari
-              }
+              cacheName: 'core-scripts-styles'
             }
           }
         ]
