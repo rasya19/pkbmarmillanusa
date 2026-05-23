@@ -21,11 +21,10 @@ function getPredikat(rata: number) {
 export default function Nilai() {
   const navigate = useNavigate();
   const [isEditMode, setIsEditMode] = useState(false);
-  const [mapels] = useState<any[]>(() => {
-    const saved = localStorage.getItem('school_mapel_list');
-    if (saved) return JSON.parse(saved);
-    return [];
-  });
+  
+  // SUNTIKAN JINAK: Menggunakan array kosong untuk menghentikan looping kedap-kedip
+  const [mapels] = useState<any[]>([]);
+
   const [nilaiList, setNilaiList] = useState<Grade[]>(() => {
     const saved = localStorage.getItem('school_nilai_list');
     if (saved) return JSON.parse(saved);
