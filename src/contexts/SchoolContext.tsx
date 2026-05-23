@@ -167,12 +167,12 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
                 setLoading(false);
                 return;
               }
-              const schoolName = registration.school_name;
+              const schoolName = registration?.school_name;
               // Map DB snake_case columns to camelCase interface
               const mappedData: School = {
                 ...data,
                 id: data.id || data.slug, // Ensure we have an ID for updates
-                name: schoolName || data.nama || data.name,
+                name: schoolName || data.name || data.nama || 'PKBM Armilla Nusa',
                 accreditation: data.akreditasi || data.accreditation,
                 address: data.alamat || data.address,
                 adminEmail: data.adminEmail || data.admin_email,
@@ -265,7 +265,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         // Reset blocked state if verified successfully
         setIsBlocked(false);
         
-        const schoolName = registration.school_name;
+        const schoolName = registration?.school_name;
         
         // BYPASS LOGIC: If status is undefined (column doesn't exist) or null, default to 'active'
         const rawStatus = data.status;
@@ -289,7 +289,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           const mappedData: School = {
             ...data,
             id: data.id || data.slug, // Ensure we have an ID for updates
-            name: schoolName || data.nama || data.name, // Use name from registration if available
+            name: schoolName || data.name || data.nama || 'PKBM Armilla Nusa', // Use name from registration if available
             accreditation: data.akreditasi || data.accreditation,
             address: data.alamat || data.address,
             adminEmail: data.adminEmail || data.admin_email,
