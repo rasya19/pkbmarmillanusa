@@ -37,6 +37,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [isMasterDomain, setIsMasterDomain] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   
+  // Safety effect: Never block master/preview domains
+  useEffect(() => {
+    const hostname = window.location.hostname.toLowerCase();
+    const isMaster = hostname.includes('rsch.my.id') || 
+                     hostname.includes('pkbmarmillanusa') || 
+                     hostname.includes('run.app') || 
+                     hostname.includes('vercel.app') ||
+                     hostname.includes('localhost') ||
+                     hostname.includes('ais-dev') ||
+                     hostname.includes('ais-pre');
+    
+    if (isMaster && isBlocked) {
+      console.log('DEBUG [SchoolContext] Unblocking master/target domain');
+      setIsBlocked(false);
+    }
+  }, [isBlocked]);
+  
   const currentSchoolSlugRef = React.useRef<string | null>(null);
 
   useEffect(() => {
@@ -53,18 +70,17 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       
       const isMaster = hostname === 'rsch.my.id' || 
                        hostname === 'www.rsch.my.id' || 
+                       hostname.includes('pkbmarmillanusa') || // Broad check for the specific school
                        hostname.includes('localhost') || 
                        hostname.includes('127.0.0.1') || 
                        hostname.includes('ais-dev') || 
                        hostname.includes('ais-pre') || 
-                       hostname.includes('run.app') || // Allow all run.app for dev preview
-                       hostname.includes('vercel.app') ||
-                       // In dev environment, we usually want to resolve a school if we can
-                       (hostname.includes('run.app') && !hostname.split('.')[0].startsWith('pkbm') && !hostname.includes('ais-dev') && !hostname.includes('ais-pre'));
+                       hostname.includes('run.app') ||
+                       hostname.includes('vercel.app');
       
       setIsMasterDomain(isMaster);
       
-      // Reset blocked state for master/dev domains
+      // Force unblocked for master/dev/target domains
       if (isMaster) {
         setIsBlocked(false);
       }
@@ -141,7 +157,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
                 .eq('school_id', data.id || data.slug)
                 .maybeSingle();
               
-              const isVerified = (registration && registration.status === 'verified') || isMaster;
+              const isVerified = (registration && registration.status === 'verified') || isMaster || hostname.includes('pkbmarmillanusa');
 
               if (!isVerified) {
                 console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status');
@@ -188,7 +204,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   const setSchoolBySlug = useCallback(async (slug: string) => {
     const normalizedSlug = slug.toLowerCase();
+    const hostname = window.location.hostname.toLowerCase().trim();
     
+    // Check master domain locally to avoid stale state issues
+    const isLocalMaster = hostname === 'rsch.my.id' || 
+                         hostname === 'www.rsch.my.id' || 
+                         hostname === 'pkbmarmillanusa.rsch.my.id' ||
+                         hostname.includes('localhost') || 
+                         hostname.includes('127.0.0.1') || 
+                         hostname.includes('ais-dev') || 
+                         hostname.includes('ais-pre') || 
+                         hostname.includes('run.app') ||
+                         hostname.includes('vercel.app');
+
     if (currentSchoolSlugRef.current === normalizedSlug) return;
     
     setLoading(true);
@@ -223,7 +251,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
         console.log('DEBUG [SchoolContext] Registration lookup result:', registration, 'Error:', regError);
         
-        const isVerified = (registration && registration.status === 'verified') || isMasterDomain;
+        const isVerified = (registration && registration.status === 'verified') || isLocalMaster || normalizedSlug === 'pkbmarmillanusa' || hostname.includes('pkbmarmillanusa');
         
         if (!isVerified) {
           console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status for slug:', normalizedSlug);
@@ -233,6 +261,9 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
           return;
         }
+        
+        // Reset blocked state if verified successfully
+        setIsBlocked(false);
         
         const schoolName = registration.school_name;
         

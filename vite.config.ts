@@ -26,17 +26,17 @@ export default defineConfig(({mode}) => {
           orientation: 'portrait',
           icons: [
             {
-              src: 'https://ui-avatars.com/api/?name=PKBM&size=192&background=0066ff&color=fff',
+              src: 'pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png'
             },
             {
-              src: 'https://ui-avatars.com/api/?name=PKBM&size=512&background=0066ff&color=fff',
+              src: 'pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png'
             },
             {
-              src: 'https://ui-avatars.com/api/?name=PKBM&size=512&background=0066ff&color=fff',
+              src: 'pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable'

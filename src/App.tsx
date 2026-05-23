@@ -148,7 +148,7 @@ function ComingSoon() {
 }
 
 function AppContent() {
-  const { school, loading, isBlocked } = useSchool();
+  const { school, loading, isBlocked, isMasterDomain } = useSchool();
   const location = useLocation();
   const isSubroutePath = location.pathname.startsWith('/s/') || location.pathname.startsWith('/dashboard');
 
@@ -172,7 +172,9 @@ function AppContent() {
     );
   }
 
-  if (loading && !isSubroutePath) {
+  // Only show full page loader on initial mount if we are not on a subroute 
+  // and we haven't determined if it's a master domain yet
+  if (loading && !isSubroutePath && !isMasterDomain) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="flex flex-col items-center gap-4">

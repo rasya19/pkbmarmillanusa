@@ -55,7 +55,7 @@ export default function Layout() {
   const { school, isMasterDomain, isBlocked, loading: schoolLoading } = useSchool();
   const location = useLocation();
   const navigate = useNavigate();
-  const [role, setRole] = useState<Role>('Siswa');
+  const [role, setRole] = useState<Role>(() => (localStorage.getItem('userRole') as Role) || 'Siswa');
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
 
   if (isBlocked) {
@@ -141,10 +141,16 @@ export default function Layout() {
   // Redirect if not approved (Only for Admin - SuperAdmin is exempt)
   useEffect(() => {
     const isAdminOnly = role === 'Admin';
+    const hostname = window.location.hostname.toLowerCase();
+    const isArmillaInstance = hostname.includes('pkbmarmillanusa') || school?.slug === 'pkbmarmillanusa';
+    
+    // Bypass for Armilla Nusa
+    if (isArmillaInstance) return;
+
     if (isAdminOnly && isApproved === false && location.pathname !== '/pending-activation') {
       navigate('/pending-activation');
     }
-  }, [isApproved, location.pathname, navigate, role]);
+  }, [isApproved, location.pathname, navigate, role, school?.slug]);
 
   // URL Guard for Tamu/Guest Role & Subscription Plan
   useEffect(() => {
