@@ -195,16 +195,15 @@ function AppContent() {
     );
   }
 
-  if (loading && !isSubroutePath) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-accent border-t-brand-sidebar rounded-full animate-spin"></div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Menghubungkan Institusi...</p>
-        </div>
-      </div>
-    );
-  }
+  // SEBELUMNYA:
+// if (loading && !isSubroutePath) {
+//   return (
+//     <div className="flex items-center justify-center min-h-screen bg-white">...</div>
+//   );
+// }
+
+// SEKARANG: Ganti dengan baris kosong ini (Langsung dilewati saja kawan)
+// Kosongkan bagian ini agar rute di bawahnya langsung dirender tanpa tertahan status loading
 
   return (
     <Routes>
