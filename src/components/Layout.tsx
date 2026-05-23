@@ -112,8 +112,12 @@ export default function Layout() {
           const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
           
           const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
-          if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
-            const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+          
+          // 1. Kita tentukan dulu target role-nya di sini agar bisa dicek oleh pagar pengaman
+          const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+          
+          // 2. Tambahkan syarat && currentRole !== forcedRole di ujung agar tidak loop terus-menerus
+          if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim()) && currentRole !== forcedRole) {
             console.log('DEBUG [Layout] Principal bypass detected, forcing role:', forcedRole);
             setRole(forcedRole);
             localStorage.setItem('userRole', forcedRole);
