@@ -347,11 +347,14 @@ export default function Layout() {
             ]
           },
           {
+            {
             icon: ClipboardCheck,
             label: 'Ujian Online',
             minPlan: 'Silver',
             subItems: [
               { icon: FileBarChart, label: 'Kelola Ujian', path: `${prefix}/dashboard/soal`, minPlan: 'Silver' },
+              // 👇 INI MENU BARU YANG KITA SISPJKAN
+              { icon: Database, label: 'Bank Soal Master', path: `${prefix}/dashboard/bank-soal`, minPlan: 'Silver' },
               { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian`, minPlan: 'Silver' },
               { icon: Eye, label: 'Monitoring Live', path: `${prefix}/dashboard/hasil-ujian`, minPlan: 'Silver' },
               { icon: Check, label: 'Input & Rekap Nilai', path: `${prefix}/dashboard/nilai`, minPlan: 'Silver' },
