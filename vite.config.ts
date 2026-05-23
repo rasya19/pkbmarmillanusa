@@ -16,7 +16,6 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'inline',
-      includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
         short_name: "LMS Armilla",
         name: "LMS PKBM Armilla Nusa",
@@ -25,14 +24,12 @@ export default defineConfig({
           {
             src: "/icon-192.png",
             type: "image/png",
-            sizes: "192x192",
-            purpose: "any"
+            sizes: "192x192"
           },
           {
             src: "/icon-512.png",
             type: "image/png",
-            sizes: "512x512",
-            purpose: "any"
+            sizes: "512x512"
           }
         ],
         start_url: "/",
@@ -42,8 +39,21 @@ export default defineConfig({
         orientation: "portrait"
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // Naikkan ke 7 MB agar aman
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        maximumFileSizeToCacheInBytes: 7 * 1024 * 1024,
+        // Taktik NetworkFirst: Ambil file CSS/JS terbaru langsung dari server Vercel agar tidak berantakan
+        runtimeCaching: [
+          {
+            urlPattern: /\.(?:js|css|html|svg|png)$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'assets-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 1 hari
+              }
+            }
+          }
+        ]
       }
     })
   ]
