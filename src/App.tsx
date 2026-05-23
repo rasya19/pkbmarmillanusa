@@ -147,27 +147,15 @@ function ComingSoon() {
   );
 }
 
-// =========================================================================
-// PROSES BYPASS UTAMA: AMEDMENT LOCK PADA APP CONTENT
-// =========================================================================
 function AppContent() {
-  const { school, loading } = useSchool();
+  const { school, loading, isBlocked } = useSchool();
   const location = useLocation();
   const isSubroutePath = location.pathname.startsWith('/s/') || location.pathname.startsWith('/dashboard');
 
-  // Kita paksa isVerifying langsung false dan securityBlocked langsung false kawan!
-  const [isVerifying] = useState(false);
-  const [securityBlocked] = useState(false);
-
-  // Jika kamu mau memaksa bypass halaman pending-activation agar tidak mengunci web
-  if (location.pathname === '/pending-activation') {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (securityBlocked) {
+  if (isBlocked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-red-50 text-slate-800 font-sans p-6">
-        <div className="text-center p-8 max-w-md w-full border border-red-100 bg-white rounded-3xl shadow-xl">
+      <div className="min-h-screen flex items-center justify-center bg-red-50 text-slate-800 font-sans p-6 text-center">
+        <div className="max-w-md w-full border border-red-100 bg-white rounded-3xl shadow-xl p-8">
           <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <span className="text-3xl font-black italic text-red-600">403</span>
           </div>
@@ -184,26 +172,16 @@ function AppContent() {
     );
   }
 
-  if (isVerifying) {
+  if (loading && !isSubroutePath) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-brand-accent border-t-brand-sidebar rounded-full animate-spin"></div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Memverifikasi Lisensi Lembaga...</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Menghubungkan Institusi...</p>
         </div>
       </div>
     );
   }
-
-  // SEBELUMNYA:
-// if (loading && !isSubroutePath) {
-//   return (
-//     <div className="flex items-center justify-center min-h-screen bg-white">...</div>
-//   );
-// }
-
-// SEKARANG: Ganti dengan baris kosong ini (Langsung dilewati saja kawan)
-// Kosongkan bagian ini agar rute di bawahnya langsung dirender tanpa tertahan status loading
 
   return (
     <Routes>
@@ -215,59 +193,54 @@ function AppContent() {
       <Route path="/ujian/:id" element={<UjianSiswa />} />
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
-      <Route path="/pending-activation" element={<Login />} /> {/* Ganti target komponen ke Login kawan */}
+      <Route path="/pending-activation" element={<PendingActivation />} />
+      <Route path="/register-school" element={<RegisterSchool />} />
       <Route path="/register-user" element={<RegisterUser />} />
       
-      {/* Dashboard Routes Utama */}
-      {school && (
-        <>
-          <Route path="login" element={<Login />} />
-          <Route path="ujian/:id" element={<UjianSiswa />} />
-          <Route path="dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
-             <Route index element={<Dashboard />} />
-             <Route path="course/:id" element={<CourseDetail />} />
-             <Route path="data-siswa" element={<DataSiswa />} />
-             <Route path="soal" element={<BankSoal />} />
-             <Route path="soal/:id/detail" element={<ButirSoal />} />
-             <Route path="hasil-ujian" element={<HasilUjian />} />
-             <Route path="data-guru" element={<Guru />} />
-             <Route path="mata-pelajaran" element={<MataPelajaran />} />
-             <Route path="akademik" element={<Akademik />} />
-             <Route path="presensi" element={<PresensiWrapper />} />
-             <Route path="agenda" element={<AgendaGuru />} />
-             <Route path="deteksi-objek" element={<DeteksiObjek />} />
-             <Route path="relasi" element={<Relasi />} />
-             <Route path="alumni" element={<Alumni />} />
-             <Route path="materi" element={<Materi />} />
-             <Route path="ujian" element={<Ujian />} />
-             <Route path="nilai" element={<Nilai />} />
-             <Route path="raport" element={<Raport />} />
-             <Route path="kelas" element={<Kelas />} />
-             <Route path="kenaikan" element={<KenaikanKelas />} />
-             <Route path="skl" element={<SKL />} />
-             <Route path="ppdb" element={<PPDB />} />
-             <Route path="pengumuman" element={<Pengumuman />} />
-             <Route path="site" element={<Site />} />
-             <Route path="statistik" element={<Statistik />} />
-             <Route path="aset" element={<Aset />} />
-             <Route path="keuangan" element={<Keuangan />} />
-             <Route path="tagihan" element={<Tagihan />} />
-             <Route path="analitik" element={<Analitik />} />
-             <Route path="diskusi" element={<Diskusi />} />
-             <Route path="ai-asisten" element={<AiAsisten />} />
-             <Route path="feedback" element={<Feedback />} />
-             <Route path="settings" element={<Settings />} />
-          </Route>
-        </>
-      )}
+      {/* Portal Dashboard Routes - Shared by all domains */}
+      <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
+         <Route index element={<Dashboard />} />
+         <Route path="course/:id" element={<CourseDetail />} />
+         <Route path="data-siswa" element={<DataSiswa />} />
+         <Route path="soal" element={<BankSoal />} />
+         <Route path="soal/:id/detail" element={<ButirSoal />} />
+         <Route path="hasil-ujian" element={<HasilUjian />} />
+         <Route path="data-guru" element={<Guru />} />
+         <Route path="mata-pelajaran" element={<MataPelajaran />} />
+         <Route path="akademik" element={<Akademik />} />
+         <Route path="presensi" element={<PresensiWrapper />} />
+         <Route path="agenda" element={<AgendaGuru />} />
+         <Route path="relasi" element={<Relasi />} />
+         <Route path="alumni" element={<Alumni />} />
+         <Route path="materi" element={<Materi />} />
+         <Route path="ujian" element={<Ujian />} />
+         <Route path="nilai" element={<Nilai />} />
+         <Route path="raport" element={<Raport />} />
+         <Route path="kelas" element={<Kelas />} />
+         <Route path="kenaikan" element={<KenaikanKelas />} />
+         <Route path="skl" element={<SKL />} />
+         <Route path="ppdb" element={<PPDB />} />
+         <Route path="pengumuman" element={<Pengumuman />} />
+         <Route path="site" element={<Site />} />
+         <Route path="statistik" element={<Statistik />} />
+         <Route path="aset" element={<Aset />} />
+         <Route path="keuangan" element={<Keuangan />} />
+         <Route path="tagihan" element={<Tagihan />} />
+         <Route path="analitik" element={<Analitik />} />
+         <Route path="diskusi" element={<Diskusi />} />
+         <Route path="ai-asisten" element={<AiAsisten />} />
+         <Route path="feedback" element={<Feedback />} />
+         <Route path="settings" element={<Settings />} />
+         <Route path="*" element={<ComingSoon />} />
+      </Route>
 
-      {/* Fallback Multi-tenancy */}
       <Route path="/s/:schoolSlug" element={<SchoolLoader />}>
          <Route index element={<LandingPage />} />
          <Route path="login" element={<Login />} />
          <Route path="ujian/:id" element={<UjianSiswa />} />
          <Route path="dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
             <Route index element={<Dashboard />} />
+            {/* ... other child routes ... */}
             <Route path="course/:id" element={<CourseDetail />} />
             <Route path="data-siswa" element={<DataSiswa />} />
             <Route path="soal" element={<BankSoal />} />
@@ -302,47 +275,6 @@ function AppContent() {
          </Route>
       </Route>
 
-      <Route element={<GuestGuard><Layout /></GuestGuard>}>
-        <Route path="/data-siswa" element={<DataSiswa />} />
-        <Route path="/data-guru" element={<Guru />} />
-        <Route path="/keuangan/tagihan" element={<Tagihan />} />
-      </Route>
-
-      <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
-        <Route index element={<Dashboard />} />
-        <Route path="course/:id" element={<CourseDetail />} />
-        <Route path="data-siswa" element={<DataSiswa />} />
-        <Route path="soal" element={<BankSoal />} />
-        <Route path="soal/:id/detail" element={<ButirSoal />} />
-        <Route path="hasil-ujian" element={<HasilUjian />} />
-        <Route path="data-guru" element={<Guru />} />
-        <Route path="mata-pelajaran" element={<MataPelajaran />} />
-        <Route path="akademik" element={<Akademik />} />
-        <Route path="presensi" element={<PresensiWrapper />} />
-        <Route path="agenda" element={<AgendaGuru />} />
-        <Route path="relasi" element={<Relasi />} />
-        <Route path="alumni" element={<Alumni />} />
-        <Route path="materi" element={<Materi />} />
-        <Route path="ujian" element={<Ujian />} />
-        <Route path="nilai" element={<Nilai />} />
-        <Route path="raport" element={<Raport />} />
-        <Route path="kelas" element={<Kelas />} />
-        <Route path="kenaikan" element={<KenaikanKelas />} />
-        <Route path="skl" element={<SKL />} />
-        <Route path="ppdb" element={<PPDB />} />
-        <Route path="pengumuman" element={<Pengumuman />} />
-        <Route path="site" element={<Site />} />
-        <Route path="statistik" element={<Statistik />} />
-        <Route path="aset" element={<Aset />} />
-        <Route path="keuangan" element={<Keuangan />} />
-        <Route path="tagihan" element={<Tagihan />} />
-        <Route path="analitik" element={<Analitik />} />
-        <Route path="diskusi" element={<Diskusi />} />
-        <Route path="ai-asisten" element={<AiAsisten />} />
-        <Route path="feedback" element={<Feedback />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="*" element={<ComingSoon />} />
-      </Route>
       <Route path="*" element={<ComingSoon />} />
     </Routes>
   );

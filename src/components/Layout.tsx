@@ -7,7 +7,7 @@ import {
   Users, 
   UserCheck, 
   GraduationCap, 
-  BookOpen, 
+  BookOpen,
   Book, 
   ClipboardCheck, 
   FileBarChart, 
@@ -52,7 +52,7 @@ type Role = 'SuperAdmin' | 'Admin' | 'Guru' | 'Siswa' | 'Tamu';
 
 export default function Layout() {
   const { schoolSlug } = useParams();
-  const { school, isMasterDomain, isBlocked } = useSchool();
+  const { school, isMasterDomain, isBlocked, loading: schoolLoading } = useSchool();
   const location = useLocation();
   const navigate = useNavigate();
   const [role, setRole] = useState<Role>('Siswa');
@@ -73,10 +73,10 @@ export default function Layout() {
   // Sync role from localStorage on mount and when it changes
   useEffect(() => {
     const storedRole = (localStorage.getItem('userRole') as Role) || 'Siswa';
-    console.log('DEBUG [Layout] Initial role from localStorage:', storedRole);
-    setRole(storedRole);
-  }, [location.pathname]); // Re-check on navigation
-
+    if (storedRole !== role) {
+      setRole(storedRole);
+    }
+  }, [role]); // Only sync when role state changes or on mount
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -106,22 +106,21 @@ export default function Layout() {
       if (isDemoMode) return;
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const currentRole = localStorage.getItem('userRole');
-        const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
-        
-        const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
-        
-        // 🔥 KUNCI UTAMA: Kita samakan forcedRole ke 'Admin' biar tidak tabrakan data lagi!
-        const forcedRole = 'Admin';
-        
-        // Pagar pengaman agar terhindar dari putaran maut infinite loop
-        if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim()) && currentRole !== forcedRole) {
-          console.log('DEBUG [Layout] Principal bypass detected, forcing role:', forcedRole);
-          setRole(forcedRole);
-          localStorage.setItem('userRole', forcedRole);
-        }
+        if (user) {
+          // Double check role bypass for principal emails
+          // ONLY apply this if we are not already in a Guru/Siswa session to avoid overwriting them
+          const currentRole = localStorage.getItem('userRole');
+          const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
+          
+          const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
+          if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
+            const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+            console.log('DEBUG [Layout] Principal bypass detected, forcing role:', forcedRole);
+            setRole(forcedRole);
+            localStorage.setItem('userRole', forcedRole);
+          }
 
+          // Coba periksa di table profiles (umum) atau table spesifik berdasarkan role jika perlu
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -132,7 +131,7 @@ export default function Layout() {
           if (profile.subscription_plan) {
             setUserPlan(profile.subscription_plan);
           }
-          setIsApproved(profile.is_approved ?? false);
+          setIsApproved(profile.is_approved ?? false); // default false jika null
         }
       }
     }
@@ -161,7 +160,8 @@ export default function Layout() {
       
       if (!isAllowed) {
         toast.error('Akses Terbatas: Anda login sebagai Tamu.');
-        navigate(prefix + '/dashboard/diskusi');
+        const target = prefix + '/dashboard/diskusi';
+        if (currentPath !== target) navigate(target);
       }
       return;
     }
@@ -171,7 +171,11 @@ export default function Layout() {
     const demoPlan = localStorage.getItem('demoPlan');
     const plan = isDemoMode ? (demoPlan || 'Silver') : (school?.subscription_plan || 'Silver');
 
+    // ROBUST REDIRECT GUARD: Wait for school data to resolve before making plan-based redirects
+    if (schoolLoading) return;
+
     if (isAdmin) {
+      
       const goldFeatures = ['/dashboard/keuangan', '/keuangan/tagihan', '/dashboard/raport', '/dashboard/analitik'];
       const platinumFeatures = ['/dashboard/aset', '/dashboard/statistik']; 
       
@@ -182,14 +186,16 @@ export default function Layout() {
       if (isPlatinumPath) featureName = currentPath.includes('aset') ? 'Manajemen Aset' : 'Statistik Eksekutif';
       if (isGoldPath) featureName = currentPath.includes('keuangan') ? 'Manajemen Keuangan' : 'E-Rapor';
 
+      const dashboardPath = prefix + '/dashboard';
+
       if (plan === 'Silver' && (isGoldPath || isPlatinumPath)) {
         setLockedFeatureName(featureName);
         setIsUpgradeModalOpen(true);
-        navigate(prefix + '/dashboard');
+        if (currentPath !== dashboardPath) navigate(dashboardPath);
       } else if (plan === 'Gold' && isPlatinumPath) {
         setLockedFeatureName(featureName);
         setIsUpgradeModalOpen(true);
-        navigate(prefix + '/dashboard');
+        if (currentPath !== dashboardPath) navigate(dashboardPath);
       }
     }
   }, [role, location.pathname, navigate, schoolSlug, school]);
@@ -213,7 +219,11 @@ export default function Layout() {
     setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
+  // Use school data from context if available, fallback to constants
   const schoolDisplayName = school?.name || SCHOOL_NAME;
+  
+  // Robust branding logic: If school data exists (Slug detected), use it.
+  // Only use Rasyatech as default if we are on the master domain and no school resolved.
   const isIdentityResolved = !!school?.name;
   
   const parts = isIdentityResolved
@@ -226,6 +236,7 @@ export default function Layout() {
   const schoolFirst = parts.first;
   const schoolRest = parts.rest;
 
+  // Sync role to localStorage if changed (for demo purposes)
   const handleRoleChange = (newRole: Role) => {
     setRole(newRole);
     localStorage.setItem('userRole', newRole);
@@ -239,11 +250,13 @@ export default function Layout() {
       if (studentId && !isDemoMode) {
         await supabase.from('profiles_siswa').update({ is_online: false }).eq('id', studentId);
       }
+      // Attempt sign out but don't strictly await it to prevent "stuck" redirects
       supabase.auth.signOut().catch(e => console.warn('Sign out error:', e));
     } catch (err) {
       console.warn('Logout try/catch error:', err);
     }
 
+    // Clear storage first for immediate session termination in the browser
     const keysToRemove = [
       'userRole', 
       'isDemoMode', 
@@ -255,6 +268,8 @@ export default function Layout() {
       'studentClass'
     ];
     keysToRemove.forEach(k => localStorage.removeItem(k));
+    
+    // Redirect immediately to portal web
     window.location.replace(schoolSlug ? `/s/${schoolSlug}/` : '/');
   };
 
@@ -344,7 +359,6 @@ export default function Layout() {
             minPlan: 'Silver',
             subItems: [
               { icon: FileBarChart, label: 'Kelola Ujian', path: `${prefix}/dashboard/soal`, minPlan: 'Silver' },
-              { icon: FileBarChart, label: 'Bank Soal Master', path: `${prefix}/dashboard/soal`, minPlan: 'Silver' },
               { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian`, minPlan: 'Silver' },
               { icon: Eye, label: 'Monitoring Live', path: `${prefix}/dashboard/hasil-ujian`, minPlan: 'Silver' },
               { icon: Check, label: 'Input & Rekap Nilai', path: `${prefix}/dashboard/nilai`, minPlan: 'Silver' },
@@ -432,6 +446,7 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-brand-bg overflow-hidden relative">
+      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div 
@@ -444,6 +459,7 @@ export default function Layout() {
         )}
       </AnimatePresence>
 
+      {/* Sidebar - Narrow/Darkish in HD theme */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 w-64 bg-brand-sidebar flex flex-col transition-transform duration-300 transform lg:relative lg:translate-x-0 print:hidden",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:w-20 xl:w-64"
@@ -468,7 +484,7 @@ export default function Layout() {
                  {school?.subscription_plan && (
                    <span className={cn(
                      "text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-widest",
-                     school.subscription_plan === 'Platinum' ? "bg-brand-accent text-brand-sidebar" :
+                     school.subscription_plan === 'Platinum' ? "bg-brand-accent text-brand-sidebar shadow-[0_0_10px_rgba(var(--brand-accent),0.3)]" :
                      school.subscription_plan === 'Gold' ? "bg-amber-400 text-slate-900" :
                      "bg-slate-700 text-slate-300"
                    )}>
@@ -634,7 +650,9 @@ export default function Layout() {
         </div>
       </aside>
 
+      {/* Main Content Area */}
       <section className="flex-1 flex flex-col min-w-0 bg-white lg:bg-brand-bg print:bg-white print:p-0 h-full relative">
+        {/* Header - HD theme is clean/white */}
         <header className="h-16 bg-white border-b border-brand-border flex items-center justify-between px-4 lg:px-8 shrink-0 print:hidden gap-4">
           <div className="flex items-center gap-4">
             <button 
@@ -724,6 +742,7 @@ export default function Layout() {
               </AnimatePresence>
             </div>
             
+            {/* Role Switcher - ONLY show for Admin role to toggle between views */}
             {role === 'Admin' && (
               <div className="relative">
                 <button 
@@ -769,8 +788,10 @@ export default function Layout() {
           </div>
         </header>
 
+        {/* Demo Mode Banner */}
         <DemoModeBanner />
 
+        {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
           <motion.div
             initial={{ opacity: 0 }}
@@ -781,6 +802,7 @@ export default function Layout() {
           </motion.div>
         </div>
 
+        {/* Password Change Modal */}
         <AnimatePresence>
           {isPasswordModalOpen && (
             <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
@@ -896,6 +918,7 @@ export default function Layout() {
         />
       </section>
 
+      {/* Right Panel - Dense Info (Visible on Large Screens) */}
       <aside className="w-80 bg-white border-l border-brand-border hidden xl:flex flex-col p-6 space-y-8 overflow-y-auto print:hidden">
         <div>
           <div className="flex items-center justify-between mb-4">
