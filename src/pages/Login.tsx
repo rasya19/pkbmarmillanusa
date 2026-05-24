@@ -91,6 +91,54 @@ export default function Login() {
           console.log('Unlocking active session automatically for NISN:', sData.nisn);
         }
 
+        // Generate virtual siswa email and password dynamically for real Supabase Auth
+        const virtualEmail = `${sData.nisn.trim()}@siswa.rasyatech.com`;
+        const virtualPassword = sData.password || '123456';
+
+        let authUser = null;
+        
+        // Attempt login using actual Supabase Auth credentials
+        const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: virtualEmail,
+          password: virtualPassword
+        });
+
+        if (signInError) {
+          // If auth user account does not exist in Auth schema yet, provision/signUp them dynamically
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: virtualEmail,
+            password: virtualPassword,
+            options: {
+              data: {
+                role: 'Siswa',
+                nisn: sData.nisn
+              }
+            }
+          });
+
+          if (signUpError) {
+            throw new Error(`Gagal mendaftarkan akun sistem Siswa: ${signUpError.message}`);
+          }
+
+          const { data: reSignInData, error: reSignInError } = await supabase.auth.signInWithPassword({
+            email: virtualEmail,
+            password: virtualPassword
+          });
+
+          if (reSignInError) {
+            throw new Error(`Gagal login setelah registrasi Siswa: ${reSignInError.message}`);
+          }
+          authUser = reSignInData.user;
+        } else {
+          authUser = authData.user;
+        }
+
+        // Sync table row's ID with the actual Supabase Auth User ID to guarantee perfect permission flows
+        if (authUser && sData.id !== authUser.id) {
+          await supabase.from('profiles_siswa').update({ id: authUser.id }).eq('id', sData.id);
+          sData.id = authUser.id;
+        }
+
         await supabase.from('profiles_siswa').update({ is_online: true }).eq('id', sData.id);
         
         localStorage.setItem('userRole', 'Siswa');
@@ -98,7 +146,6 @@ export default function Login() {
         localStorage.setItem('studentId', sData.id);
         localStorage.setItem('studentNisn', sData.nisn);
         localStorage.setItem('studentClass', sData.class || 'Paket C');
-        localStorage.setItem('isDemoMode', 'true');
         
         navigate('/dashboard');
       } catch (err: any) {
@@ -118,20 +165,9 @@ export default function Login() {
 
     const emailLower = emailUtama.toLowerCase().trim();
 
-    // 2a. Bypass Khusus Owner (PROAKTIF & INSTAN - Sebelum auth memunculkan Invalid Credential)
-    if (emailLower === 'pkbmarmillanusa@gmail.com' || emailLower === 'ismanto095@gmail.com') {
-      const bypassRole = emailLower === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
-      localStorage.setItem('userRole', bypassRole);
-      localStorage.setItem('userEmail', emailLower);
-      localStorage.setItem('adminName', bypassRole === 'SuperAdmin' ? 'Administrator' : 'Admin PKBM Armilla');
-      localStorage.setItem('isDemoMode', 'true');
-      navigate('/admin-dashboard');
-      return;
-    }
-
-    // 2b. Bypass Logis Guru dengan Pengecekan Basis Data Lokal profiles_guru
-    if (loginRole === 'Guru') {
-      try {
+    try {
+      // 2a. Auto-signUp & Sinkronisasi Real-Time untuk Guru yang baru terdaftar di database
+      if (loginRole === 'Guru') {
         const { data: gData } = await supabase
           .from('profiles_guru')
           .select('*')
@@ -140,55 +176,129 @@ export default function Login() {
 
         if (gData) {
           const expectedPassword = gData.password || '123456';
-          if (passwordUtama === expectedPassword || passwordUtama === '12345678') {
-            localStorage.setItem('userRole', 'Guru');
-            localStorage.setItem('userEmail', gData.email || emailLower);
-            localStorage.setItem('teacherName', gData.nama || 'Guru');
-            localStorage.setItem('teacherId', gData.id);
-            localStorage.setItem('teacherEmail', gData.email || '');
-            localStorage.setItem('isDemoMode', 'true');
-            navigate('/dashboard');
-            return;
+          if (passwordUtama === expectedPassword) {
+            // Coba login
+            const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: emailLower,
+              password: passwordUtama
+            });
+
+            let authUser = authData?.user;
+
+            if (signInError) {
+              // Jika Guru belum terdaftar di Supabase Auth, daftarkan secara otomatis demi full Read-Write session
+              const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                email: emailLower,
+                password: passwordUtama,
+                options: {
+                  data: {
+                    role: 'Guru'
+                  }
+                }
+              });
+
+              if (signUpError) console.error('Auto Guru Signup error:', signUpError);
+
+              const { data: reSignInData, error: reSignInError } = await supabase.auth.signInWithPassword({
+                email: emailLower,
+                password: passwordUtama
+              });
+
+              if (!reSignInError) {
+                authUser = reSignInData.user;
+              }
+            }
+
+            // Sync database ID dengan Auth ID
+            if (authUser && gData.id !== authUser.id) {
+              await supabase.from('profiles_guru').update({ id: authUser.id }).eq('id', gData.id);
+            }
           }
         }
-      } catch (err) {
-        console.warn('Local Guru bypass check warning:', err);
       }
-    }
 
-    // 2c. Bypass Logis Admin Sekolah dengan Pengecekan Basis Data di profile_sekolah
-    if (loginRole === 'Admin') {
-      try {
+      // 2b. Auto-signUp & Sinkronisasi Real-Time untuk Admin Sekolah yang baru terdaftar di database
+      if (loginRole === 'Admin') {
         const { data: pData } = await supabase
           .from('profiles')
           .select('*')
           .eq('email', emailLower)
           .maybeSingle();
 
-        if (pData && (pData.role === 'Admin' || pData.role === 'SuperAdmin')) {
-          const isStandardPassword = passwordUtama === '123456' || passwordUtama === '12345678' || passwordUtama === 'DemoAccount123!';
+        if (pData) {
+          const isStandardPassword = passwordUtama === '123456' || passwordUtama === '12345678' || passwordUtama === 'DemoAccount123!' || passwordUtama === 'DEMOACCOUNT123!';
           if (isStandardPassword) {
-            localStorage.setItem('userRole', pData.role || 'Admin');
-            localStorage.setItem('userEmail', pData.email || emailLower);
-            localStorage.setItem('adminName', pData.nama || 'Admin Sekolah');
-            localStorage.setItem('isDemoMode', 'true');
-            navigate('/dashboard');
-            return;
+            const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: emailLower,
+              password: passwordUtama
+            });
+
+            let authUser = authData?.user;
+
+            if (signInError) {
+              // Jika Akun Admin belum terdaftar di Supabase Auth, daftarkan secara otomatis demi full Read-Write session
+              const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                email: emailLower,
+                password: passwordUtama,
+                options: {
+                  data: {
+                    role: pData.role || 'Admin'
+                  }
+                }
+              });
+
+              if (signUpError) console.error('Auto Admin Signup error:', signUpError);
+
+              const { data: reSignInData, error: reSignInError } = await supabase.auth.signInWithPassword({
+                email: emailLower,
+                password: passwordUtama
+              });
+
+              if (!reSignInError) {
+                authUser = reSignInData.user;
+              }
+            }
+
+            // Sync database ID dengan Auth ID
+            if (authUser && pData.id !== authUser.id) {
+              await supabase.from('profiles').update({ id: authUser.id }).eq('id', pData.id);
+            }
           }
         }
-      } catch (err) {
-        console.warn('Local Admin bypass check warning:', err);
       }
-    }
 
-    // 2d. Aliran Logis Supabase Auth Standard
-    try {
+      // 2c. Logis Supabase Auth Standard
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: emailLower, 
         password: passwordUtama 
       });
 
       if (error) {
+        // Fallback Khusus Owner untuk akun admin master jika belum terdaftar sama sekali
+        if (emailLower === 'pkbmarmillanusa@gmail.com' || emailLower === 'ismanto095@gmail.com') {
+          const bypassRole = emailLower === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+          
+          // Cobalah untuk mendaftarkannya terlebih dahulu agar memiliki auth session nyata
+          const { data: masterSignUp } = await supabase.auth.signUp({
+            email: emailLower,
+            password: passwordUtama,
+            options: { data: { role: bypassRole } }
+          }).catch(() => ({ data: null }));
+
+          const { data: masterAuth } = await supabase.auth.signInWithPassword({
+            email: emailLower,
+            password: passwordUtama
+          }).catch(() => ({ data: null }));
+
+          if (masterAuth?.user) {
+            localStorage.setItem('userEmail', emailLower);
+            localStorage.setItem('userRole', bypassRole);
+            localStorage.setItem('adminName', bypassRole === 'SuperAdmin' ? 'Administrator' : 'Admin PKBM Armilla');
+            navigate('/dashboard');
+            return;
+          }
+        }
+
         alert(error.message);
         setIsLoading(false);
         return;
@@ -197,13 +307,22 @@ export default function Login() {
       // Login Normal Guru/Admin melalui data User
       if (data.user) {
         localStorage.setItem('userEmail', data.user.email || '');
-        const { data: profile } = await supabase.from('profiles').select('role, nama').eq('id', data.user.id).maybeSingle();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, nama, school_id')
+          .or(`id.eq.${data.user.id},email.eq.${data.user.email}`)
+          .maybeSingle();
         
         let finalRole = profile?.role || 'Guru';
         let profileName = profile?.nama || 'User';
 
         if (!profile) {
-          const { data: guru } = await supabase.from('profiles_guru').select('nama, email').eq('id', data.user.id).maybeSingle();
+          const { data: guru } = await supabase
+            .from('profiles_guru')
+            .select('nama, email')
+            .or(`id.eq.${data.user.id},email.eq.${data.user.email}`)
+            .maybeSingle();
+
           if (guru) {
             finalRole = 'Guru';
             profileName = guru.nama;
@@ -217,9 +336,6 @@ export default function Login() {
         } else {
           localStorage.setItem('teacherName', profileName);
         }
-        
-        // Bersihkan isDemoMode jika berhasil terautentikasi penuh dengan Auth Supabase
-        localStorage.removeItem('isDemoMode');
         
         navigate('/dashboard');
       }

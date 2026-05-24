@@ -56,11 +56,17 @@ export default function ProfileGuru() {
       const currentRole = localStorage.getItem('userRole') || 'Guru';
       const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
 
-      const { data, error } = await supabase
-        .from(table)
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const identifier = currentRole === 'Siswa' ? 'nisn' : 'email';
+      const val = currentRole === 'Siswa' ? user.email?.split('@')[0] : user.email;
+
+      let query = supabase.from(table).select('*');
+      if (val) {
+        query = query.or(`id.eq.${user.id},${identifier}.eq.${val}`);
+      } else {
+        query = query.eq('id', user.id);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -118,10 +124,17 @@ export default function ProfileGuru() {
         alamat: form.get('alamat')?.toString() || biodata.alamat
       };
 
-      const { error: updateError } = await supabase
-        .from(table)
-        .update(updateData)
-        .eq('id', user.id);
+      const identifier = currentRole === 'Siswa' ? 'nisn' : 'email';
+      const val = currentRole === 'Siswa' ? user.email?.split('@')[0] : user.email;
+
+      let uQuery = supabase.from(table).update(updateData);
+      if (val) {
+        uQuery = uQuery.or(`id.eq.${user.id},${identifier}.eq.${val}`);
+      } else {
+        uQuery = uQuery.eq('id', user.id);
+      }
+
+      const { error: updateError } = await uQuery;
 
       if (updateError) {
         console.error("Detail Error Supabase:", updateError);
@@ -194,13 +207,20 @@ export default function ProfileGuru() {
       const currentRole = localStorage.getItem('userRole') || 'Guru';
       const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
 
-      await supabase
-        .from(table)
-        .update({ 
-          must_change_password: false,
-          harus_mengubah_kata_sandi: false
-        })
-        .eq('id', user.id);
+      const identifier = currentRole === 'Siswa' ? 'nisn' : 'email';
+      const val = currentRole === 'Siswa' ? user.email?.split('@')[0] : user.email;
+
+      let pQuery = supabase.from(table).update({ 
+        must_change_password: false,
+        harus_mengubah_kata_sandi: false
+      });
+      if (val) {
+        pQuery = pQuery.or(`id.eq.${user.id},${identifier}.eq.${val}`);
+      } else {
+        pQuery = pQuery.eq('id', user.id);
+      }
+
+      await pQuery;
 
       toast.success('Password Berhasil Diperbarui!');
       setPasswordState({ newPassword: '', confirmPassword: '' });

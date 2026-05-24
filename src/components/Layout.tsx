@@ -154,12 +154,6 @@ export default function Layout() {
     let authListener: any;
 
     async function checkSession() {
-      const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
-      if (isDemoMode) {
-        setIsCheckingAuth(false);
-        return;
-      }
-
       // 1. Initial Get User
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -184,14 +178,32 @@ export default function Layout() {
         const adminRoles = ['Admin', 'SuperAdmin'];
         if (!adminRoles.includes(currentRole) && (currentRole === 'Guru' || currentRole === 'Siswa')) {
           const table = currentRole === 'Guru' ? 'profiles_guru' : 'profiles_siswa';
-          const { data: userData } = await supabase
-            .from(table)
-            .select('must_change_password, harus_mengubah_kata_sandi')
-            .eq('id', user.id)
-            .maybeSingle();
+          const identifier = currentRole === 'Guru' ? 'email' : 'nisn';
+          const val = currentRole === 'Guru' ? user.email : user.email?.split('@')[0];
+
+          let query = supabase.from(table).select('id, must_change_password, harus_mengubah_kata_sandi');
+          if (val) {
+            query = query.or(`id.eq.${user.id},${identifier}.eq.${val}`);
+          } else {
+            query = query.eq('id', user.id);
+          }
+
+          const { data: userData } = await query.maybeSingle();
           
-          const forceChange = userData?.must_change_password === true || userData?.harus_mengubah_kata_sandi === true;
-          setMustChangePassword(forceChange);
+          if (userData) {
+            // Auto sync DB id with Auth user id if currently mismatched
+            if (userData.id !== user.id) {
+              try {
+                await supabase.from(table).update({ id: user.id }).eq('id', userData.id);
+              } catch (e) {
+                console.warn('ID sync error:', e);
+              }
+            }
+            const forceChange = userData?.must_change_password === true || userData?.harus_mengubah_kata_sandi === true;
+            setMustChangePassword(forceChange);
+          } else {
+            setMustChangePassword(false);
+          }
         } else {
           // Explicitly clear for Admins (Backup check)
           setMustChangePassword(false);
@@ -211,10 +223,17 @@ export default function Layout() {
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .or(`id.eq.${user.id},email.eq.${user.email}`)
           .maybeSingle();
         
         if (profile) {
+          if (profile.id !== user.id) {
+            try {
+              await supabase.from('profiles').update({ id: user.id }).eq('id', profile.id);
+            } catch (e) {
+              console.warn('Profile ID sync error:', e);
+            }
+          }
           if (profile.subscription_plan) setUserPlan(profile.subscription_plan);
           setIsApproved(profile.is_approved ?? false);
         }
@@ -289,9 +308,7 @@ export default function Layout() {
     }
 
     // Subscription Plan Guard
-    const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
-    const demoPlan = localStorage.getItem('demoPlan');
-    const plan = isDemoMode ? (demoPlan || 'Silver') : (school?.subscription_plan || 'Silver');
+    const plan = userPlan || school?.subscription_plan || 'Silver';
 
     // ROBUST REDIRECT GUARD: Wait for school data to resolve before making plan-based redirects
     if (schoolLoading) return;
@@ -328,13 +345,11 @@ export default function Layout() {
         if (currentPath !== dashboardPath) navigate(dashboardPath);
       }
     }
-  }, [role, location.pathname, navigate, schoolSlug, school]);
+  }, [role, location.pathname, navigate, schoolSlug, school, userPlan]);
 
   // Dynamic Theme Logic
   useEffect(() => {
-    const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
-    const demoPlan = localStorage.getItem('demoPlan');
-    const activePlan = isDemoMode ? (demoPlan || 'Silver') : (userPlan || school?.subscription_plan || 'Silver');
+    const activePlan = userPlan || school?.subscription_plan || 'Silver';
     if (activePlan === 'Platinum') {
       document.documentElement.style.setProperty('--color-brand-accent', '#D4AF37');
       document.documentElement.style.setProperty('--color-brand-sidebar', '#1a1a1a');
@@ -374,10 +389,9 @@ export default function Layout() {
   };
 
   const handleLogout = async () => {
-    const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
     try {
       const studentId = localStorage.getItem('studentId');
-      if (studentId && !isDemoMode) {
+      if (studentId) {
         await supabase.from('profiles_siswa').update({ is_online: false }).eq('id', studentId);
       }
       // Attempt sign out but don't strictly await it to prevent "stuck" redirects
@@ -418,14 +432,11 @@ export default function Layout() {
     }, 1500);
   };
 
-  const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
   const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || localStorage.getItem('studentName') || (role === 'Admin' ? 'Administrator' : role);
 
   const getNavItems = (): (any & { isExternal?: boolean })[] => {
     const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
-    const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
-    const demoPlan = localStorage.getItem('demoPlan');
-    const plan = isDemoMode ? (demoPlan || 'Silver') : (userPlan || school?.subscription_plan || 'Silver');
+    const plan = userPlan || school?.subscription_plan || 'Silver';
     
     const getPlanRank = (p: string) => {
       if (p === 'Platinum') return 3;
@@ -807,7 +818,7 @@ export default function Layout() {
                  {adminName} <span className="text-brand-accent italic">{role}</span>
                </h2>
                <p className="text-[10px] text-brand-text-muted uppercase tracking-wider hidden md:block">
-                 {isDemoMode ? 'Sedang dalam mode uji coba publik' : (role === 'Siswa' ? 'Selamat belajar kembali' : role === 'Guru' ? 'Manajemen pembelajaran hari ini' : role === 'SuperAdmin' ? 'Akses Penuh Arsitektur Rasyatech' : 'Kendali sistem pusat Rasyatech')}
+                 {role === 'Siswa' ? 'Selamat belajar kembali' : role === 'Guru' ? 'Manajemen pembelajaran hari ini' : role === 'SuperAdmin' ? 'Akses Penuh Arsitektur Rasyatech' : 'Kendali sistem pusat Rasyatech'}
                </p>
             </div>
           </div>
