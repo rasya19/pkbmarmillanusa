@@ -102,6 +102,47 @@ export default function Layout() {
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [mustChangePassword, setMustChangePassword] = useState<boolean>(false);
 
+  // Auto Logout (Session Timeout) - 15 minutes of inactivity
+  useEffect(() => {
+    const currentRole = localStorage.getItem('userRole');
+    if (currentRole !== 'Guru' && currentRole !== 'Siswa') return;
+
+    let logoutTimer: any;
+    const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+
+    const resetTimer = () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      logoutTimer = setTimeout(handleAutoLogout, IDLE_TIMEOUT);
+    };
+
+    const handleAutoLogout = async () => {
+      console.log('Session timeout reached. Logging out...');
+      await supabase.auth.signOut();
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('activeSchool');
+      
+      toast.error('Sesi Anda telah berakhir demi keamanan. Silakan login kembali.', {
+        id: 'session-timeout',
+        duration: 5000
+      });
+
+      const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
+      navigate(`${prefix}/login`);
+    };
+
+    // Event listeners
+    const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+
+    // Initial start
+    resetTimer();
+
+    return () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [location.pathname, navigate, schoolSlug]);
+
   useEffect(() => {
     async function fetchProfile() {
       const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
