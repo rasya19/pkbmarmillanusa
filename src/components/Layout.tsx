@@ -468,8 +468,8 @@ export default function Layout() {
               { icon: Book, label: 'Kelola Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran`, minPlan: 'Silver' },
               { icon: Layers, label: 'Manajemen Kelas', path: `${prefix}/dashboard/kelas`, minPlan: 'Silver' },
               { icon: UserPlus, label: 'Data Pendaftar (PPDB)', path: `${prefix}/dashboard/ppdb`, minPlan: 'Silver' },
-              { icon: BookMarked, label: isReguler ? 'Bank Modul (SD/SMA)' : 'Modul Kesetaraan', path: `${prefix}/dashboard/modul`, minPlan: 'Silver' },
-              { icon: ShieldCheck, label: isReguler ? 'Akreditasi Sekolah' : 'Akreditasi SNP', path: `${prefix}/dashboard/akreditasi`, minPlan: 'Silver' },
+              { icon: BookMarked, label: isReguler ? 'Bank Modul (SD/SMA)' : 'Modul Kesetaraan', path: `${prefix}/dashboard/modul`, isLocked: false },
+              { icon: ShieldCheck, label: isReguler ? 'Akreditasi Sekolah' : 'Akreditasi SNP', path: `${prefix}/dashboard/akreditasi`, isLocked: false },
             ]
           },
           {

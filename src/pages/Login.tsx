@@ -65,20 +65,23 @@ export default function Login() {
     keysToInitialClear.forEach(k => localStorage.removeItem(k));
 
     try {
-      // 1. AMBIL VALUE INPUT SECARA LANGSUNG (Menggunakan FormData Bawaan HTML)
-      const form = new FormData(e.currentTarget);
-      const emailInput = form.get('email')?.toString().trim();
-      const passwordInput = form.get('password')?.toString();
-      const nisnInput = form.get('nisn')?.toString();
+      // 1. AMBIL VALUE INPUT SECARA LANGSUNG (FormData Bawaan HTML - Mandat Pak Ismanto)
+      const dataForm = new FormData(e.currentTarget);
+      const emailUtama = dataForm.get('email')?.toString().trim();
+      const passwordUtama = dataForm.get('password')?.toString();
+      const nisnInput = dataForm.get('nisn')?.toString();
 
       // 2. JALUR AUTH UTAMA (Admin & Guru)
-      if (emailInput && passwordInput) {
+      if (emailUtama && passwordUtama) {
         const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: emailInput,
-          password: passwordInput,
+          email: emailUtama,
+          password: passwordUtama,
         });
 
-        if (authError) throw authError;
+        if (authError) {
+          alert(authError.message);
+          return;
+        }
 
         if (data.user) {
           const userEmailLower = data.user.email?.toLowerCase().trim();
@@ -90,7 +93,7 @@ export default function Login() {
             localStorage.setItem('userEmail', userEmailLower);
             localStorage.setItem('adminName', bypassRole === 'SuperAdmin' ? 'Administrator' : 'Admin PKBM Armilla');
             localStorage.removeItem('isDemoMode');
-            navigate('/dashboard');
+            navigate('/admin-dashboard');
             return;
           }
 
@@ -147,8 +150,15 @@ export default function Login() {
           .eq('nisn', nisnInput.trim())
           .single();
 
-        if (sError || !sData) throw new Error('NISN tidak ditemukan.');
-        if (sData.is_online) throw new Error('Akun sedang aktif di perangkat lain.');
+        if (sError || !sData) {
+          alert('NISN tidak ditemukan.');
+          return;
+        }
+
+        if (sData.is_online) {
+          alert('Akun sedang aktif di perangkat lain.');
+          return;
+        }
 
         await supabase.from('profiles_siswa').update({ is_online: true }).eq('id', sData.id);
         localStorage.setItem('userRole', 'Siswa');
@@ -160,10 +170,10 @@ export default function Login() {
         return;
       }
 
-      throw new Error('Masukkan Email/Password atau NISN yang valid.');
+      alert('Email atau password tidak boleh kosong!');
 
     } catch (error: any) {
-      setErrorMsg(error.message);
+      alert(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -276,22 +286,24 @@ export default function Login() {
             )}
 
             <form onSubmit={handleLogin} className="space-y-5">
-              {/* Email/Password Fields (Always in DOM for Autofill stability) */}
-              <div className={cn("space-y-5", loginRole === 'Siswa' ? "hidden" : "block")}>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
-                    Email Akun
-                  </label>
+              {/* Email/Password Form (Murni - No Hybrid DOM) */}
+              {loginRole !== 'Siswa' ? (
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
+                      Email Akun
+                    </label>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
                         <Mail className="w-4 h-4" />
                       </div>
                       <input 
-                          name="email"
-                          type="text" 
-                          autoComplete="username email"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
+                        name="email"
+                        type="text" 
+                        autoComplete="username email"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
                         placeholder="nama@email.com"
+                        required
                       />
                     </div>
                   </div>
@@ -303,44 +315,45 @@ export default function Login() {
                         <Lock className="w-4 h-4" />
                       </div>
                       <input 
-                          name="password"
-                          type={showPassword ? "text" : "password"} 
-                          autoComplete="current-password"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-12 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
+                        name="password"
+                        type={showPassword ? "text" : "password"} 
+                        autoComplete="current-password"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-12 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
                         placeholder="••••••••"
+                        required
                       />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-400 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* NISN Field */}
-              <div className={cn("space-y-5", loginRole !== 'Siswa' ? "hidden" : "block")}>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
-                    Nomor NISN Siswa
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
-                      <ShieldCheck className="w-4 h-4" />
+                      <button 
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-400 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
-                    <input 
-                      name="nisn"
-                      type="text" 
-                      value={formData.nisn}
-                      onChange={(e) => setFormData({...formData, nisn: e.target.value})}
-                      placeholder="Masukkan 10 digit NISN Anda"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
-                    />
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* NISN Form (Murni - No Hybrid DOM) */
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
+                      Nomor NISN Siswa
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <input 
+                        name="nisn"
+                        type="text" 
+                        placeholder="Masukkan 10 digit NISN Anda"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end pt-2">
                 <button 

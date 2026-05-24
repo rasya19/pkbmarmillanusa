@@ -183,7 +183,7 @@ export default function Akreditasi() {
               </div>
             </button>
 
-            {(role === 'Admin' || role === 'SuperAdmin') && (
+            {(role === 'Admin' || role === 'SuperAdmin' || role === 'Guru') && (
               <button 
                 onClick={() => setIsModalOpen(true)}
                 className="bg-brand-sidebar text-white py-3 px-6 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:shadow-brand-sidebar/20 active:scale-95 transition-all flex items-center gap-2"
@@ -212,7 +212,7 @@ export default function Akreditasi() {
                         >
                           <Download className="w-4 h-4" />
                         </a>
-                        {(role === 'Admin' || role === 'SuperAdmin') && (
+                        {(role === 'Admin' || role === 'SuperAdmin' || role === 'Guru') && (
                           <button 
                             onClick={() => handleDelete(doc.id)}
                             className="p-2 hover:bg-slate-100 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
@@ -232,9 +232,9 @@ export default function Akreditasi() {
               ) : (
                 <div className="col-span-full py-20 text-center">
                   <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-4">
-                    <Lock className="w-8 h-8" />
+                    <FolderOpen className="w-8 h-8" />
                   </div>
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Folder ini masih kosong</h4>
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Folder Belum Terisi</h4>
                   <p className="text-[9px] font-bold text-slate-300 mt-1">Belum ada dokumen standar yang diunggah untuk kategori ini.</p>
                 </div>
               )}
