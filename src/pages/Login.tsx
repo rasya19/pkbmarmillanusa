@@ -69,27 +69,8 @@ export default function Login() {
       const passwordRaw = formData.password;
 
       console.log('DEBUG [Auth] Attempting login for:', emailTrimmed);
-      console.log('DEBUG [Auth] Password length:', passwordRaw.length);
 
-      if (loginRole === 'Guru') {
-        const { data: guruData, error: dbError } = await supabase
-          .from('profiles_guru')
-          .select('*')
-          .eq('email', emailTrimmed)
-          .eq('password', passwordRaw)
-          .single();
-
-        if (dbError || !guruData) {
-          console.log('DEBUG [Auth] Guru not found in profiles_guru, falling back to Auth');
-        } else {
-          localStorage.setItem('userRole', 'Guru');
-          localStorage.setItem('teacherName', guruData.nama || guruData.name || 'Guru');
-          localStorage.setItem('teacherEmail', guruData.email || '');
-          navigate('/dashboard');
-          return;
-        }
-      }
-
+      // 1. Special Handling for Siswa (NISN Based - No Auth)
       if (loginRole === 'Siswa') {
         const { data: sData, error: sError } = await supabase
           .from('profiles_siswa')
@@ -109,7 +90,7 @@ export default function Login() {
         return;
       }
 
-      // Default Auth Login (Admin/SuperAdmin)
+      // 2. Verified Supabase Auth Login (Admin & Guru)
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: emailTrimmed,
         password: passwordRaw,
@@ -124,105 +105,63 @@ export default function Login() {
         console.log('DEBUG [Auth] Success! User ID:', data.user.id);
         localStorage.setItem('userEmail', data.user.email || '');
         
-        // 1. Try fetch profile by Auth ID
-        let profileById = null;
-        try {
-          const { data: pData, error: p1Error } = await supabase
-            .from('profiles')
+        // 3. Resolve Role intelligently
+        let finalRole: string = 'Siswa';
+        let profileName = '';
+
+        // Check for Principal/Owner Emails FIRST (Bypass)
+        const userEmailLower = data.user.email?.toLowerCase().trim();
+        const superAdminEmails = ['ismanto095@gmail.com'];
+        const adminEmails = ['pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
+
+        if (userEmailLower && superAdminEmails.includes(userEmailLower)) {
+          finalRole = 'SuperAdmin';
+          profileName = 'Administrator';
+        } else if (userEmailLower && adminEmails.includes(userEmailLower)) {
+          finalRole = 'Admin';
+          profileName = 'Admin PKBM Armilla';
+        } else {
+          // Normal user: check profiles tables
+          // Try Guru Profile
+          const { data: guruProfile } = await supabase
+            .from('profiles_guru')
             .select('*')
             .eq('id', data.user.id)
             .maybeSingle();
-          
-          if (p1Error) {
-            console.error('DEBUG [Auth] Profile query by ID error:', p1Error);
-            // If 406/400, try a more minimal select
-            if (p1Error.code === 'PGRST106' || p1Error.message.includes('Accept')) {
-               console.log('DEBUG [Auth] Attempting minimal select for profiles...');
-               const { data: minData } = await supabase
-                 .from('profiles')
-                 .select('id, role, school_id, nama')
-                 .eq('id', data.user.id)
-                 .maybeSingle();
-               profileById = minData;
-            }
-          } else {
-            profileById = pData;
-          }
-        } catch (e) {
-          console.error('DEBUG [Auth] Profiles query crashed:', e);
-        }
-        
-        let profile = profileById;
 
-        // 2. Fallback to Email if Not Found by ID (for newly approved admins)
-        if (!profile && data.user.email) {
-          console.log('DEBUG [Auth] Profile not found by ID, trying Email:', data.user.email);
-          try {
-            const { data: profileByEmail, error: p2Error } = await supabase
+          if (guruProfile) {
+            finalRole = 'Guru';
+            profileName = guruProfile.nama || guruProfile.name || 'Guru';
+            localStorage.setItem('teacherName', profileName);
+            localStorage.setItem('teacherEmail', guruProfile.email || '');
+          } else {
+            // Try Admin/General Profile
+            const { data: adminProfile } = await supabase
               .from('profiles')
               .select('*')
-              .eq('email', data.user.email.toLowerCase().trim())
+              .eq('id', data.user.id)
               .maybeSingle();
             
-            if (p2Error) console.error('DEBUG [Auth] Profile query by Email error:', p2Error);
-            
-            if (profileByEmail) {
-              console.log('DEBUG [Auth] Found profile by Email. Linking to ID:', data.user.id);
-              profile = profileByEmail;
-              // Link the profile to the Auth ID for future efficient lookups
-              await supabase
-                .from('profiles')
-                .update({ id: data.user.id })
-                .eq('email', data.user.email.toLowerCase().trim());
+            if (adminProfile) {
+              finalRole = adminProfile.role || 'Admin';
+              profileName = adminProfile.nama || adminProfile.name || 'Admin';
+              if (adminProfile.school_id) localStorage.setItem('school_id', adminProfile.school_id);
+            } else {
+              // Metadata fallback
+              finalRole = data.user.user_metadata?.role || 'Guru';
+              profileName = data.user.user_metadata?.name || 'User';
             }
-          } catch (e) {
-            console.error('DEBUG [Auth] Profile email fallback crashed:', e);
           }
         }
-        
-        // Priority: Profile Table Role -> Auth Metadata Role -> Fallback Siswa
-        let finalRole = profile?.role || profile?.peran || data.user.user_metadata?.role || 'Siswa';
-        
-        console.log('DEBUG [Auth] Initial Role from DB/Metadata:', finalRole);
-        console.log('DEBUG [Auth] Checking Principal Email Bypass for:', data.user.email);
 
-        // Final sanity check for administrative emails (BYPASS for identified owners/admins)
-        const principalEmails = [
-          'ismanto095@gmail.com', 
-          'pkbmarmillanusa@gmail.com', 
-          'armillanusa@gmail.com'
-        ];
-        
-        const userEmailLower = data.user.email?.toLowerCase().trim();
-        
-        if (userEmailLower && principalEmails.map(e => e.toLowerCase().trim()).includes(userEmailLower)) {
-          console.log('DEBUG [Auth] Bypass Email Match Found:', userEmailLower);
-          if (userEmailLower === 'ismanto095@gmail.com') {
-            finalRole = 'SuperAdmin';
-          } else {
-            // Guarantee Admin role for institutional email
-            finalRole = 'Admin';
-          }
-          console.log('DEBUG [Auth] Principal Email Bypass Triggered. Forced Role:', finalRole);
-        } else {
-          console.log('DEBUG [Auth] No Bypass Triggered. Principal Emails:', principalEmails);
-        }
-        
         console.log('DEBUG [Auth] Final Resolved Role:', finalRole);
         localStorage.setItem('userRole', finalRole);
         
-        // Correctly set admin name based on profile, metadata, or role
-        const finalAdminName = profile?.nama || 
-                               profile?.name || 
-                               data.user.user_metadata?.name || 
-                               (finalRole === 'SuperAdmin' ? 'Administrator' : 
-                               (data.user.email === 'pkbmarmillanusa@gmail.com' ? 'Admin PKBM Armilla Nusa' : 'Administrator'));
-        
-        localStorage.setItem('adminName', finalAdminName);
-        if (profile?.school_id) localStorage.setItem('school_id', profile.school_id);
-        
+        if (finalRole === 'Admin' || finalRole === 'SuperAdmin') {
+          localStorage.setItem('adminName', profileName);
+        }
+
         localStorage.removeItem('isDemoMode');
-        
         navigate('/dashboard');
       }
     } catch (error: any) {
