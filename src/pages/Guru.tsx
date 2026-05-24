@@ -188,7 +188,7 @@ export default function Guru() {
 
       const performSave = async (data: any) => {
         if (editingGuru && editingGuru.id && !editingGuru.id.startsWith('temp')) {
-          const { error } = await supabase.from('profiles_guru').update(data).eq('id', editingGuru.id);
+          const { data: result, error } = await supabase.from('profiles_guru').update(data).eq('id', editingGuru.id).select();
           if (error) {
             // Graceful degradation if column missing
             let cleanedData = { ...data };
@@ -209,12 +209,25 @@ export default function Guru() {
             } else {
               throw error;
             }
+          } else if (result && result.length > 0) {
+            // Update local state immediately
+            const updated = result[0];
+            setGuruList(prev => prev.map(g => g.id === updated.id ? {
+              ...g,
+              name: updated.nama || updated.name || g.name,
+              nip: updated.nip || g.nip,
+              email: updated.email || g.email,
+              phone: updated.phone || updated.whatsapp || g.phone,
+              alamat: updated.alamat || g.alamat,
+              password: updated.password || g.password,
+              must_change_password: updated.must_change_password ?? g.must_change_password
+            } : g));
           }
           if (userRole === 'Guru') setShowForcePasswordChange(false);
         } else {
           // New teachers must change password on first login
           data.must_change_password = true;
-          const { error } = await supabase.from('profiles_guru').insert([data]);
+          const { data: result, error } = await supabase.from('profiles_guru').insert([data]).select();
           if (error) {
             // Graceful degradation if column missing
             let cleanedData = { ...data };
@@ -228,17 +241,42 @@ export default function Guru() {
               delete cleanedData.whatsapp;
               retryNeeded = true;
             }
-            if (error.message.includes("nip")) {
-               // Some tables use different columns for ID/NIP
-               // but we keep nip as it is standard. Only remove if specifically failing.
-            }
 
             if (retryNeeded) {
-              const { error: retryError } = await supabase.from('profiles_guru').insert([cleanedData]);
+              const { data: retryResult, error: retryError } = await supabase.from('profiles_guru').insert([cleanedData]).select();
               if (retryError) throw retryError;
+              if (retryResult && retryResult.length > 0) {
+                const nw = retryResult[0];
+                const newTeacher: Teacher = {
+                  id: nw.id,
+                  name: nw.nama || nw.name || '',
+                  nip: nw.nip || '',
+                  email: nw.email || '',
+                  phone: nw.phone || nw.whatsapp || '',
+                  alamat: nw.alamat || '',
+                  password: nw.password || '',
+                  must_change_password: nw.must_change_password || false,
+                  school_id: nw.school_id
+                };
+                setGuruList(prev => [newTeacher, ...prev]);
+              }
             } else {
               throw error;
             }
+          } else if (result && result.length > 0) {
+            const nw = result[0];
+            const newTeacher: Teacher = {
+              id: nw.id,
+              name: nw.nama || nw.name || '',
+              nip: nw.nip || '',
+              email: nw.email || '',
+              phone: nw.phone || nw.whatsapp || '',
+              alamat: nw.alamat || '',
+              password: nw.password || '',
+              must_change_password: nw.must_change_password || false,
+              school_id: nw.school_id
+            };
+            setGuruList(prev => [newTeacher, ...prev]);
           }
         }
       };
@@ -367,6 +405,14 @@ export default function Guru() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button 
+            onClick={() => fetchGuru()}
+            disabled={isLoading}
+            className="flex items-center gap-2 bg-white border border-brand-border text-brand-text-main px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all disabled:opacity-50"
+          >
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Refresh
+          </button>
           {userRole === 'Admin' && (
             <>
               <button 

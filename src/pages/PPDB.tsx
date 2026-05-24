@@ -5,6 +5,7 @@ import { useSchool } from '../contexts/SchoolContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface StudentRegistration {
   id: string;
@@ -104,6 +105,7 @@ export default function PPDB() {
   
   const handleApprove = async (id: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase
         .from('ppdb_registrations')
         .update({
@@ -114,9 +116,61 @@ export default function PPDB() {
         
       if (error) throw error;
       fetchRegistrations();
-      alert('Pendaftar berhasil diverifikasi!');
-    } catch (error) {
-      alert('Gagal verifikasi.');
+      toast.success('Pendaftar berhasil diverifikasi!');
+    } catch (error: any) {
+      toast.error('Gagal verifikasi: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConvertToStudent = async (applicant: any) => {
+    if (!window.confirm(`Konversi ${applicant.name} menjadi siswa aktif di ${school?.name}?`)) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // 1. Prepare student data from applicant
+      const studentData = {
+        school_id: school?.npsn || applicant.npsn,
+        nama: applicant.name,
+        nisn: applicant.nisn || '',
+        nik: applicant.nik || '',
+        email: applicant.email || '',
+        whatsapp: applicant.whatsapp || '',
+        jk: applicant.jk || '',
+        tempat_lahir: applicant.tempatLahir || '',
+        tanggal_lahir: applicant.tanggalLahir || '',
+        alamat: applicant.alamat || '',
+        paket: applicant.paket || 'Paket C',
+        status: 'Aktif',
+        password: applicant.password || '12345',
+        mustChangePassword: true,
+        created_at: new Date().toISOString()
+      };
+
+      // 2. Insert into profiles_siswa
+      const { error: insertError } = await supabase
+        .from('profiles_siswa')
+        .insert([studentData]);
+
+      if (insertError) throw insertError;
+
+      // 3. Update PPDB status to CONVERTED
+      const { error: updateError } = await supabase
+        .from('ppdb_registrations')
+        .update({ status: 'CONVERTED' })
+        .eq('id', applicant.id);
+
+      if (updateError) throw updateError;
+
+      toast.success(`${applicant.name} berhasil terdaftar sebagai siswa aktif!`);
+      fetchRegistrations();
+    } catch (error: any) {
+      console.error('Conversion Error:', error);
+      toast.error('Gagal konversi: ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 

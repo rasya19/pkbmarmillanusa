@@ -166,6 +166,7 @@ export default function DataSiswa() {
         }
       }
       setIsModalOpen(false);
+      await fetchStudents();
     } catch (err: any) {
       console.error('Error saving student:', err);
       let errMsg = err.message || 'Unknown error';
@@ -257,6 +258,14 @@ export default function DataSiswa() {
         </div>
         
         <div className="relative z-10 flex flex-wrap gap-4">
+          <button 
+            onClick={() => fetchStudents()}
+            disabled={isLoading}
+            className="bg-white/10 text-white border border-white/20 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-white/20 transition-all shadow-lg disabled:opacity-50"
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />} 
+            Refresh
+          </button>
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isImporting}
