@@ -45,7 +45,7 @@ export default function RegisterSchool() {
 
       toast.success('Pendaftaran sekolah berhasil! Mohon tunggu verifikasi.');
       
-      // WhatsApp notification
+      // whatsapp notification
       const message = `Halo Rasyatech, sekolah baru "${formData.name}" (NPSN: ${formData.npsn}) telah mendaftar. Mohon segera dilakukan verifikasi.`;
       const waUrl = `https://wa.me/6281918226387?text=${encodeURIComponent(message)}`;
       window.open(waUrl, '_blank');
@@ -69,7 +69,7 @@ export default function RegisterSchool() {
           <input type="text" placeholder="NPSN" required className="w-full p-4 rounded-xl border border-brand-border text-sm" onChange={e => setFormData({...formData, npsn: e.target.value})} />
           <input type="text" placeholder="Nama Admin" required className="w-full p-4 rounded-xl border border-brand-border text-sm" onChange={e => setFormData({...formData, adminName: e.target.value})} />
           <input type="email" placeholder="Email Admin" required className="w-full p-4 rounded-xl border border-brand-border text-sm" onChange={e => setFormData({...formData, adminEmail: e.target.value})} />
-          <input type="text" placeholder="WhatsApp (08...)" required className="w-full p-4 rounded-xl border border-brand-border text-sm" onChange={e => setFormData({...formData, whatsapp: e.target.value})} />
+          <input type="text" placeholder="whatsapp (08...)" required className="w-full p-4 rounded-xl border border-brand-border text-sm" onChange={e => setFormData({...formData, whatsapp: e.target.value})} />
           <button disabled={loading} className="w-full bg-brand-sidebar text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs flex justify-center gap-2">
             {loading ? <Loader2 className="animate-spin" /> : <Rocket />} Kirim Pendaftaran
           </button>

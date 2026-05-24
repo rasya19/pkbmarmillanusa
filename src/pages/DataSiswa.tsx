@@ -226,7 +226,7 @@ export default function DataSiswa() {
           nisn: String(item.NISN || item.nisn || '') || null,
           nama: item.Nama || item.nama || item.name || '',
           class: String(item.Kelas || item.class || item.kelas || ''),
-          whatsapp: String(item.WhatsApp || item.whatsapp || item.noHp || ''),
+          whatsapp: String(item.WhatsApp || item.noHp || ''),
           status: item.Status || item.status || 'Aktif',
           photourl: item.photourl || '',
           school_id: school.npsn,
