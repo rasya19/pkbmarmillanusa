@@ -48,6 +48,7 @@ import Purchase from './pages/Purchase';
 import Feedback from './pages/Feedback';
 import Analitik from './pages/Analitik';
 import Settings from './pages/Settings';
+import ProfileGuru from './pages/ProfileGuru';
 import Presensi from './pages/Presensi';
 import AgendaGuru from './pages/AgendaGuru';
 import PresensiSiswa from './pages/PresensiSiswa';
@@ -238,6 +239,7 @@ function AppContent() {
          <Route path="ai-asisten" element={<AiAsisten />} />
          <Route path="feedback" element={<Feedback />} />
          <Route path="settings" element={<Settings />} />
+         <Route path="profile" element={<ProfileGuru />} />
          <Route path="*" element={<ComingSoon />} />
       </Route>
 
@@ -286,6 +288,7 @@ function AppContent() {
             <Route path="ai-asisten" element={<AiAsisten />} />
             <Route path="feedback" element={<Feedback />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="profile" element={<ProfileGuru />} />
          </Route>
       </Route>
 

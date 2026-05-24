@@ -4,6 +4,7 @@ import { NavLink, Outlet, useParams, useLocation, useNavigate } from 'react-rout
 import { useSchool } from '../contexts/SchoolContext';
 import { 
   LayoutDashboard, 
+  User,
   Users, 
   UserCheck, 
   GraduationCap, 
@@ -432,6 +433,7 @@ export default function Layout() {
           },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
           { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
+          { icon: User, label: 'Profil Saya', path: `${prefix}/dashboard/profile` },
         ];
       case 'Tamu':
         return [
