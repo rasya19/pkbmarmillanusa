@@ -171,25 +171,13 @@ export default function Purchase() {
       if (authError) throw authError;
 
       // 2. Save Registration Data to Supabase
-      const slug = formData.schoolName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const registrationId = `${slug}-${Date.now()}`;
+      const slug = formData.schoolName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       
       const { error: dbError } = await supabase.from('registrations').insert([{
-        id: registrationId,
-        owner_uid: authData.user?.id,
-        name: formData.schoolName,
-        npsn: formData.npsn,
-        accreditation: formData.accreditation,
-        address: formData.address,
-        admin_name: formData.name,
-        admin_email: formData.email,
+        school_name: formData.schoolName,
+        subdomain: slug,
         whatsapp: formData.phone,
-        package_id: selectedPackage.id,
-        payment_method: paymentMethod,
-        referral_code: formData.referralCode,
-        slug: slug,
-        status: 'pending',
-        created_at: new Date().toISOString(),
+        status: 'pending'
       }]);
       
       if (dbError) throw dbError;

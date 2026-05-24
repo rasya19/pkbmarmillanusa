@@ -19,17 +19,23 @@ export default function RegisterSchool() {
     e.preventDefault();
     setLoading(true);
     try {
-      const slugVal = formData.name.toLowerCase()
+      const slugVal = formData.name.toLowerCase().trim()
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-');
+
+      console.log('DEBUG [Registration] Sending payload:', {
+        school_name: formData.name,
+        subdomain: slugVal,
+        whatsapp: formData.whatsapp,
+        status: 'pending'
+      });
 
       const { error } = await supabase.from('registrations').insert([{
         school_name: formData.name,
         subdomain: slugVal,
         whatsapp: formData.whatsapp,
-        status: 'pending',
-        created_at: new Date().toISOString()
+        status: 'pending'
       }]);
       
       if (error) {

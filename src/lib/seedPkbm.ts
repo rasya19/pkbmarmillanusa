@@ -9,17 +9,17 @@ async function seedPkbm() {
   try {
     console.log('Inserting into schools...');
     await supabase.from('schools').insert([{
-        id: 'fallah',
         name: 'PKBM Nurul Falah',
         slug: 'fallah',
-        npsn: 'P1234566',
-        status: 'active'
+        is_active: true,
+        whatsapp: '+6285225025555'
     }]);
 
     console.log('Inserting into registrations...');
     await supabase.from('registrations').insert([{
         school_name: 'PKBM Nurul Falah',
-        npsn: 'P1234566',
+        subdomain: 'fallah',
+        whatsapp: '085225025555',
         status: 'pending'
     }]);
 
