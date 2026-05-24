@@ -39,7 +39,9 @@ import {
   ShieldAlert,
   ArrowRight,
   ScanFace,
-  FolderOpen
+  FolderOpen,
+  Library,
+  BookMarked
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -446,6 +448,8 @@ export default function Layout() {
               { icon: Book, label: 'Kelola Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran`, minPlan: 'Silver' },
               { icon: Layers, label: 'Manajemen Kelas', path: `${prefix}/dashboard/kelas`, minPlan: 'Silver' },
               { icon: UserPlus, label: 'Data Pendaftar (PPDB)', path: `${prefix}/dashboard/ppdb`, minPlan: 'Silver' },
+              { icon: BookMarked, label: 'Modul Kesetaraan', path: `${prefix}/dashboard/modul`, minPlan: 'Silver' },
+              { icon: ShieldCheck, label: 'Akreditasi SNP', path: `${prefix}/dashboard/akreditasi`, minPlan: 'Silver' },
             ]
           },
           {
@@ -528,6 +532,8 @@ export default function Layout() {
           },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
           { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
+          { icon: BookMarked, label: 'Modul Kesetaraan', path: `${prefix}/dashboard/modul` },
+          { icon: ShieldCheck, label: 'Data Akreditasi', path: `${prefix}/dashboard/akreditasi` },
           { icon: User, label: 'Profil Saya', path: `${prefix}/dashboard/profile` },
         ];
       case 'Tamu':
@@ -540,6 +546,7 @@ export default function Layout() {
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
           { icon: UserCheck, label: 'Presensi Saya', path: `${prefix}/dashboard/presensi` },
           { icon: BookOpen, label: 'Materi Ajar (E-Modul)', path: `${prefix}/dashboard/materi` },
+          { icon: BookMarked, label: 'Modul Kesetaraan', path: `${prefix}/dashboard/modul` },
           { icon: ClipboardCheck, label: 'Ikut Ujian', path: `${prefix}/dashboard/ujian` },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
           { icon: FileBarChart, label: 'Nilai Saya', path: `${prefix}/dashboard/nilai` },

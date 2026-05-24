@@ -48,6 +48,8 @@ import Purchase from './pages/Purchase';
 import Feedback from './pages/Feedback';
 import Analitik from './pages/Analitik';
 import Settings from './pages/Settings';
+import ModulKesetaraan from './pages/ModulKesetaraan';
+import Akreditasi from './pages/Akreditasi';
 import ProfileGuru from './pages/ProfileGuru';
 import Presensi from './pages/Presensi';
 import AgendaGuru from './pages/AgendaGuru';
@@ -208,6 +210,8 @@ function AppContent() {
       {/* Portal Dashboard Routes - Shared by all domains */}
       <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
          <Route index element={<Dashboard />} />
+         <Route path="modul" element={<ModulKesetaraan />} />
+         <Route path="akreditasi" element={<Akreditasi />} />
          <Route path="course/:id" element={<CourseDetail />} />
          <Route path="data-siswa" element={<DataSiswa />} />
          <Route path="soal" element={<BankSoal />} />
@@ -249,7 +253,8 @@ function AppContent() {
          <Route path="ujian/:id" element={<UjianSiswa />} />
          <Route path="dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
             <Route index element={<Dashboard />} />
-            {/* ... other child routes ... */}
+            <Route path="modul" element={<ModulKesetaraan />} />
+            <Route path="akreditasi" element={<Akreditasi />} />
             <Route path="course/:id" element={<CourseDetail />} />
             <Route path="students" element={<DataSiswa />} />
           <Route path="teachers" element={<Guru />} />
