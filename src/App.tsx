@@ -204,6 +204,7 @@ function AppContent() {
       <Route path="/register-school" element={<RegisterSchool />} />
       <Route path="/register-user" element={<RegisterUser />} />
       <Route path="/ppdb" element={<PPDBRegistration />} />
+      <Route path="/admin-dashboard" element={<Navigate to="/dashboard" replace />} />
       <Route path="/students" element={<Navigate to="/dashboard/data-siswa" replace />} />
       <Route path="/teachers" element={<Navigate to="/dashboard/data-guru" replace />} />
       

@@ -31,11 +31,14 @@ export default function ForcePasswordChangeModal({ isOpen, userId, role, onSucce
       });
       if (authError) throw authError;
 
-      // 2. Update Profile flag
+      // 2. Update Profile flag (Double-tap naming convention for safety)
       const table = role === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
       const { error: dbError } = await supabase
         .from(table)
-        .update({ must_change_password: false })
+        .update({ 
+          must_change_password: false,
+          harus_mengubah_kata_sandi: false
+        })
         .eq('id', userId);
       
       if (dbError) throw dbError;

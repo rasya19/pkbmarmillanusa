@@ -168,19 +168,20 @@ export default function Layout() {
         const currentRole = localStorage.getItem('userRole') as Role;
         
         // 2. Immediate Security Check for Teachers/Students
-        if (currentRole === 'Guru' || currentRole === 'Siswa') {
+        const adminRoles = ['Admin', 'SuperAdmin'];
+        if (!adminRoles.includes(currentRole) && (currentRole === 'Guru' || currentRole === 'Siswa')) {
           const table = currentRole === 'Guru' ? 'profiles_guru' : 'profiles_siswa';
           const { data: userData } = await supabase
             .from(table)
-            .select('must_change_password')
+            .select('must_change_password, harus_mengubah_kata_sandi')
             .eq('id', user.id)
             .maybeSingle();
           
-          if (userData?.must_change_password) {
-            setMustChangePassword(true);
-          } else {
-            setMustChangePassword(false);
-          }
+          const forceChange = userData?.must_change_password === true || userData?.harus_mengubah_kata_sandi === true;
+          setMustChangePassword(forceChange);
+        } else {
+          // Explicitly clear for Admins
+          setMustChangePassword(false);
         }
 
         // 3. Admin Roles & Permissions
@@ -916,11 +917,11 @@ export default function Layout() {
         <DemoModeBanner />
 
         {/* Force Password Change Modal (Global Overlay) */}
-        {userId && (role === 'Guru' || role === 'Siswa') && (
+        {userId && (role === 'Guru' || role === 'Siswa') && !['Admin', 'SuperAdmin'].includes(role) && (
           <ForcePasswordChangeModal 
             isOpen={mustChangePassword}
             userId={userId}
-            role={role}
+            role={role as 'Guru' | 'Siswa'}
             onSuccess={() => setMustChangePassword(false)}
           />
         )}

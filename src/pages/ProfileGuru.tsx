@@ -85,10 +85,11 @@ export default function ProfileGuru() {
 
   const handleUpdateBiodata = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teacherId) return;
-
     setSavingBiodata(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sesi tidak valid');
+
       const currentRole = localStorage.getItem('userRole') || 'Guru';
       const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
 
@@ -100,14 +101,10 @@ export default function ProfileGuru() {
         alamat: biodata.alamat
       };
 
-      if (currentRole === 'Siswa') {
-        delete updateData.phone; // Students usually use whatsapp column
-      }
-
       const { error } = await supabase
         .from(table)
         .update(updateData)
-        .eq('id', teacherId);
+        .eq('id', user.id);
 
       if (error) throw error;
       toast.success('Biodata berhasil diperbarui');
@@ -148,6 +145,12 @@ export default function ProfileGuru() {
       }
 
       // 3. Supabase Auth Update
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Sesi Habis: Silakan login ulang.');
+        return;
+      }
+
       const { error: authError } = await supabase.auth.updateUser({
         password: passwordState.newPassword
       });
@@ -160,8 +163,11 @@ export default function ProfileGuru() {
 
       await supabase
         .from(table)
-        .update({ must_change_password: false })
-        .eq('id', teacherId);
+        .update({ 
+          must_change_password: false,
+          harus_mengubah_kata_sandi: false
+        })
+        .eq('id', user.id);
 
       toast.success('Password Berhasil Diperbarui!');
       setPasswordState({ newPassword: '', confirmPassword: '' });
