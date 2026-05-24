@@ -61,20 +61,31 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const resolveByHostname = async () => {
-      let rawHostname = window.location.hostname.toLowerCase().trim();
-      // Clean www. prefix for consistent resolution
-      const hostname = rawHostname.startsWith('www.') ? rawHostname.replace('www.', '') : rawHostname;
-      
+      const hostname = window.location.hostname.toLowerCase().trim();
       console.log('DEBUG [SchoolContext] Resolving for hostname:', hostname);
 
+      let slug = '';
+      
+      // MANDAT MUTLAK: Deteksi ArmillaNusa atau Lingkungan Lokal
+      if (hostname.includes('armillanusa') || hostname === 'localhost' || hostname === '127.0.0.1') {
+        slug = 'armillanusa';
+        console.log('DEBUG [SchoolContext] SLUG DIPAKSA KE ARMILLANUSA:', slug);
+      } 
+      // Platform domain resolution (rsch.my.id)
+      else if (hostname.endsWith('.rsch.my.id')) {
+        const platformSuffix = 'rsch.my.id';
+        const slugPart = hostname.substring(0, hostname.length - platformSuffix.length - 1);
+        if (slugPart) {
+          slug = slugPart.split('.')[0];
+          console.log('DEBUG [SchoolContext] Extracted slug from platform domain:', slug);
+        }
+      }
+
       const isMaster = hostname === 'rsch.my.id' || 
-                       hostname.includes('pkbmarmillanusa') ||
-                       hostname.includes('localhost') || 
-                       hostname.includes('127.0.0.1') || 
                        hostname.includes('ais-dev') || 
-                       hostname.includes('ais-pre') || 
-                       hostname.includes('run.app') ||
-                       hostname.includes('vercel.app');
+                       hostname.includes('ais-pre') ||
+                       (hostname.includes('run.app') && !hostname.includes('armillanusa')) ||
+                       (hostname.includes('vercel.app') && !hostname.includes('armillanusa'));
       
       setIsMasterDomain(isMaster);
       
@@ -82,31 +93,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setIsBlocked(false);
       }
       
-      let slug = '';
-      let customDomainPath = hostname; // We'll try this as a fallback if slug fails
+      let customDomainPath = hostname;
 
-      // PRIORITY 1: Hardcode for armillanusa if detected in hostname (User Mandate)
-      if (hostname.includes('armillanusa')) {
-        slug = 'armillanusa';
-        console.log('DEBUG [SchoolContext] Priority slug assigned (ArmillaNusa detected):', slug);
-      } 
-      // PRIORITY 2: Default for Localhost for testing purposes
-      else if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        slug = 'armillanusa';
-        console.log('DEBUG [SchoolContext] Localhost detected, defaulting to armillanusa');
-      }
-      // PRIORITY 3: Extract slug from platform domain (rsch.my.id)
-      else if (hostname.endsWith('.rsch.my.id')) {
-        const platformSuffix = 'rsch.my.id';
-        const slugPart = hostname.substring(0, hostname.length - platformSuffix.length - 1);
-        if (slugPart) {
-          slug = slugPart.split('.')[0]; 
-          console.log('DEBUG [SchoolContext] Extracted slug from platform domain:', slug);
-        }
-      }
-
-      // REMOVED: Fallback matching for 'pkbm' in run.app/vercel.app to avoid repo name collisions.
-      
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user && !slug) {
         const { data: profile } = await supabase
@@ -148,7 +136,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Priority 2: Fallback to resolving by custom domain if slug lookup failed or no slug found
+      // Priority 2: Fallback to resolving by custom domain
       if (customDomainPath) {
         console.log('DEBUG [SchoolContext] Attempting lookup by custom_domain:', customDomainPath);
         try {
@@ -177,7 +165,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
                 .eq('slug', data.slug)
                 .maybeSingle();
               
-              const isVerified = (registration && registration.status === 'verified') || isMaster || hostname.includes('pkbmarmillanusa');
+              const isVerified = (registration && registration.status === 'verified') || isMaster || hostname.includes('armillanusa');
 
               if (!isVerified) {
                 setIsBlocked(true);
