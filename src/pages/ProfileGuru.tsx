@@ -23,6 +23,8 @@ export default function ProfileGuru() {
   const [showPassword, setShowPassword] = useState(false);
   const [teacherId, setTeacherId] = useState<string | null>(null);
 
+  const [isMustChange, setIsMustChange] = useState(false);
+
   const [biodata, setBiodata] = useState({
     nama: '',
     email: '',
@@ -66,6 +68,7 @@ export default function ProfileGuru() {
       }
 
       if (data) {
+        setIsMustChange(!!data.must_change_password);
         setBiodata({
           nama: data.nama || data.name || '',
           email: data.email || user.email || '',
@@ -176,6 +179,8 @@ export default function ProfileGuru() {
     }
   };
 
+  const isPasswordValid = passwordState.newPassword.length >= 6 && passwordState.newPassword === passwordState.confirmPassword;
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
@@ -187,6 +192,81 @@ export default function ProfileGuru() {
 
   return (
     <div className="max-w-4xl space-y-8 pb-12">
+      {isMustChange && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-sidebar/95 backdrop-blur-md">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="w-full max-w-lg bg-white rounded-[3rem] p-10 shadow-2xl relative overflow-hidden text-center"
+          >
+            <div className="absolute top-0 left-0 w-full h-2 bg-brand-accent" />
+            <div className="w-20 h-20 bg-brand-bg rounded-[2rem] border border-brand-border flex items-center justify-center text-brand-accent mx-auto mb-8 shadow-xl">
+              <ShieldCheck className="w-10 h-10" />
+            </div>
+            
+            <h2 className="text-2xl font-black text-brand-sidebar uppercase italic tracking-tighter mb-2">
+              Keamanan <span className="text-brand-accent">Diutamakan</span>
+            </h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">
+              Sesuai kebijakan sistem, Anda wajib memperbarui password default pada login pertama.
+            </p>
+
+            <form onSubmit={handleUpdatePassword} className="space-y-6 text-left">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Password Baru (Min. 6 Karakter)</label>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    value={passwordState.newPassword}
+                    onChange={(e) => setPasswordState({...passwordState, newPassword: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all"
+                    placeholder="Masukkan password baru Anda"
+                    required
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Konfirmasi Password Baru</label>
+                <input 
+                  type="password" 
+                  value={passwordState.confirmPassword}
+                  onChange={(e) => setPasswordState({...passwordState, confirmPassword: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all"
+                  placeholder="Ulangi password baru Anda"
+                  required
+                />
+              </div>
+
+              {passwordState.confirmPassword && passwordState.newPassword !== passwordState.confirmPassword && (
+                <p className="text-[9px] font-bold text-red-500 uppercase tracking-tight text-center">⚠ Konfirmasi password tidak cocok!</p>
+              )}
+
+              <button 
+                type="submit"
+                disabled={savingPassword || !isPasswordValid}
+                className={cn(
+                  "w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl",
+                  isPasswordValid 
+                    ? "bg-brand-sidebar text-white hover:bg-emerald-600 hover:shadow-emerald-500/20 active:scale-[0.98]" 
+                    : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                )}
+              >
+                {savingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Update Password Sekarang
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-black text-brand-sidebar uppercase italic tracking-tighter flex items-center gap-3">
           <User className="w-8 h-8 text-brand-accent" />
