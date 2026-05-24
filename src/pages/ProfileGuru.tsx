@@ -25,8 +25,6 @@ export default function ProfileGuru() {
   const [showPassword, setShowPassword] = useState(false);
   const [teacherId, setTeacherId] = useState<string | null>(null);
 
-  const [isMustChange, setIsMustChange] = useState(false);
-
   const [biodata, setBiodata] = useState({
     nama: '',
     email: '',
@@ -70,7 +68,6 @@ export default function ProfileGuru() {
       }
 
       if (data) {
-        setIsMustChange(!!data.must_change_password);
         setBiodata({
           nama: data.nama || data.name || '',
           email: data.email || user.email || '',
@@ -194,91 +191,6 @@ export default function ProfileGuru() {
 
   return (
     <div className="max-w-4xl space-y-8 pb-12">
-      {isMustChange && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-sm">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl relative border-4 border-brand-accent/30 text-center"
-          >
-            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-6">
-              <ShieldCheck className="w-10 h-10" />
-            </div>
-            
-            <h2 className="text-xl font-black text-slate-900 uppercase italic tracking-tight mb-2">
-              Wajib Ganti Password
-            </h2>
-            <p className="text-xs font-bold text-slate-500 mb-8">
-              Silakan ganti password default Anda untuk alasan keamanan sebelum melanjutkan.
-            </p>
-
-            <div className="space-y-4 text-left">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Password Baru</label>
-                <input 
-                  type="password" 
-                  placeholder="Masukkan Password Baru" 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)} 
-                  className="w-full p-4 border-2 border-slate-200 rounded-2xl text-black font-bold focus:border-brand-accent outline-none transition-all placeholder:text-slate-300"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Konfirmasi Password</label>
-                <input 
-                  type="password" 
-                  placeholder="Konfirmasi Password Baru" 
-                  value={confirmPassword} 
-                  onChange={(e) => setConfirmPassword(e.target.value)} 
-                  className="w-full p-4 border-2 border-slate-200 rounded-2xl text-black font-bold focus:border-brand-accent outline-none transition-all placeholder:text-slate-300"
-                />
-              </div>
-
-              {confirmPassword && newPassword !== confirmPassword && (
-                <p className="text-[10px] font-bold text-red-500 text-center uppercase tracking-tight">⚠ Password konfirmasi tidak cocok!</p>
-              )}
-
-              <button 
-                type="button"
-                onClick={async () => {
-                  if (newPassword.length < 6) {
-                    toast.error('Minimal 6 karakter!');
-                    return;
-                  }
-                  setSavingPassword(true);
-                  try {
-                    const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
-                    if (authError) throw authError;
-
-                    const currentRole = localStorage.getItem('userRole') || 'Guru';
-                    const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
-                    await supabase.from(table).update({ must_change_password: false }).eq('id', teacherId);
-
-                    toast.success('Password berhasil diperbarui!');
-                    setTimeout(() => window.location.reload(), 1500);
-                  } catch (err: any) {
-                    toast.error(err.message);
-                  } finally {
-                    setSavingPassword(false);
-                  }
-                }}
-                disabled={savingPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 6}
-                className={cn(
-                  "w-full py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3",
-                  newPassword && newPassword === confirmPassword && newPassword.length >= 6
-                    ? "bg-brand-sidebar text-white hover:bg-emerald-600 active:scale-95" 
-                    : "bg-slate-100 text-slate-300 cursor-not-allowed"
-                )}
-              >
-                {savingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Ubah Password Sekarang
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
       <div>
         <h1 className="text-2xl font-black text-brand-sidebar uppercase italic tracking-tighter flex items-center gap-3">
           <User className="w-8 h-8 text-brand-accent" />

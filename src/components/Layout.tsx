@@ -46,6 +46,7 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import UpgradeModal from './UpgradeModal';
 import DemoModeBanner from './DemoModeBanner';
+import ForcePasswordChangeModal from './ForcePasswordChangeModal';
 
 import { supabase } from '../lib/supabase';
 
@@ -101,6 +102,7 @@ export default function Layout() {
   // Fetch User Plan, Approval Status, and Force Password Change
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [mustChangePassword, setMustChangePassword] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Auto Logout (Session Timeout) - 15 minutes of inactivity
   useEffect(() => {
@@ -150,6 +152,7 @@ export default function Layout() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setUserId(user.id);
         const currentRole = localStorage.getItem('userRole') as Role;
         const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
         
@@ -171,13 +174,6 @@ export default function Layout() {
           
           if (userData?.must_change_password) {
             setMustChangePassword(true);
-            const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
-            if (!location.pathname.includes('/dashboard/profile')) {
-              navigate(`${prefix}/dashboard/profile`);
-              toast.error('Keamanan: Silakan ganti password default Anda untuk melanjutkan.', {
-                id: 'force-password-change'
-              });
-            }
           }
         }
 
@@ -869,6 +865,16 @@ export default function Layout() {
 
         {/* Demo Mode Banner */}
         <DemoModeBanner />
+
+        {/* Force Password Change Modal (Global Overlay) */}
+        {userId && (role === 'Guru' || role === 'Siswa') && (
+          <ForcePasswordChangeModal 
+            isOpen={mustChangePassword}
+            userId={userId}
+            role={role}
+            onSuccess={() => setMustChangePassword(false)}
+          />
+        )}
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
