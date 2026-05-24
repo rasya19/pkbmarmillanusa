@@ -12,7 +12,7 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'logo-putih-192.png', 'logo-putih-512.png'],
+        includeAssets: ['favicon.ico', 'logo-putih-192.png', 'logo-putih-512.png', 'pwa-192x192.png', 'pwa-512x512.png'],
         workbox: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           cleanupOutdatedCaches: true,
@@ -26,6 +26,18 @@ export default defineConfig(({mode}) => {
           background_color: "#0B2447",
           theme_color: "#FFFFFF",
           icons: [
+            {
+              "src": "/pwa-192x192.png",
+              "sizes": "192x192",
+              "type": "image/png",
+              "purpose": "any maskable"
+            },
+            {
+              "src": "/pwa-512x512.png",
+              "sizes": "512x512",
+              "type": "image/png",
+              "purpose": "any maskable"
+            },
             {
               "src": "/logo-putih-192.png",
               "sizes": "192x192",
