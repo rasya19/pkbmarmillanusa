@@ -51,16 +51,17 @@ export default function ProfileGuru() {
       }
 
       setTeacherId(user.id);
+      const currentRole = localStorage.getItem('userRole') || 'Guru';
+      const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
 
       const { data, error } = await supabase
-        .from('profiles_guru')
+        .from(table)
         .select('*')
         .eq('id', user.id)
         .single();
 
       if (error) {
-        // Fallback for demo if single() fails or table not found
-        console.error('Error fetching teacher profile:', error);
+        console.error('Error fetching profile:', error);
         return;
       }
 
@@ -70,7 +71,7 @@ export default function ProfileGuru() {
           email: data.email || user.email || '',
           phone: data.phone || data.whatsapp || '',
           alamat: data.alamat || '',
-          nip: data.nip || ''
+          nip: data.nip || data.nisn || ''
         });
       }
     } catch (err) {
@@ -86,15 +87,24 @@ export default function ProfileGuru() {
 
     setSavingBiodata(true);
     try {
+      const currentRole = localStorage.getItem('userRole') || 'Guru';
+      const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
+
+      const updateData: any = {
+        nama: biodata.nama,
+        email: biodata.email,
+        phone: biodata.phone,
+        whatsapp: biodata.phone,
+        alamat: biodata.alamat
+      };
+
+      if (currentRole === 'Siswa') {
+        delete updateData.phone; // Students usually use whatsapp column
+      }
+
       const { error } = await supabase
-        .from('profiles_guru')
-        .update({
-          nama: biodata.nama,
-          email: biodata.email,
-          phone: biodata.phone,
-          whatsapp: biodata.phone,
-          alamat: biodata.alamat
-        })
+        .from(table)
+        .update(updateData)
         .eq('id', teacherId);
 
       if (error) throw error;
@@ -109,7 +119,7 @@ export default function ProfileGuru() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 1. Validation checks
+    // ... validation logic ...
     if (!passwordState.newPassword) {
       toast.error('Password baru wajib diisi');
       return;
@@ -131,48 +141,36 @@ export default function ProfileGuru() {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !sessionData.session) {
-        console.error('Session check failed:', sessionError);
-        toast.error('Sesi Habis: Silakan login ulang untuk melanjutkan pergantian password.');
-        // Optional: window.location.href = '/login'; 
+        toast.error('Sesi Habis: Silakan login ulang.');
         return;
       }
 
-      console.log('Session verified. Attempting to update password for user:', teacherId);
-
-      // 3. Supabase Auth Update with current session
-      const { data, error: authError } = await supabase.auth.updateUser({
+      // 3. Supabase Auth Update
+      const { error: authError } = await supabase.auth.updateUser({
         password: passwordState.newPassword
       });
 
-      if (authError) {
-        console.error('Auth update error:', authError);
-        throw new Error(authError.message || 'Terjadi kesalahan sistem saat memperbarui kredensial.');
-      }
+      if (authError) throw authError;
 
-      // 4. (Optional) Sync with profile table if standard
-      // We wrap this in a separate try-catch so it doesn't block the main auth success
-      try {
-        await supabase
-          .from('profiles_guru')
-          .update({ 
-            // Only update if columns exist, handles missing legacy columns gracefully
-            must_change_password: false 
-          })
-          .eq('id', teacherId);
-      } catch (syncErr) {
-        console.warn('Sync profile table warning (non-critical):', syncErr);
-      }
+      // 4. Update must_change_password flag
+      const currentRole = localStorage.getItem('userRole') || 'Guru';
+      const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
 
-      // 5. Success feedback
-      toast.success('Password Berhasil Diperbarui! Silakan gunakan password baru ini pada login berikutnya.');
-      
-      // Clear form
+      await supabase
+        .from(table)
+        .update({ must_change_password: false })
+        .eq('id', teacherId);
+
+      toast.success('Password Berhasil Diperbarui!');
       setPasswordState({ newPassword: '', confirmPassword: '' });
       
+      // Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        window.location.reload(); // Refresh to clear guards
+      }, 2000);
+      
     } catch (err: any) {
-      console.error('Password update process failed:', err);
-      // Explicit error alert for visibility
-      toast.error('Gagal Ganti Password: ' + (err.message || 'Koneksi terputus atau sesi habis.'));
+      toast.error('Gagal Ganti Password: ' + err.message);
     } finally {
       setSavingPassword(false);
     }

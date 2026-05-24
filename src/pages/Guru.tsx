@@ -227,6 +227,10 @@ export default function Guru() {
         } else {
           // New teachers must change password on first login
           data.must_change_password = true;
+          // Default password if not provided
+          if (!data.password) {
+            data.password = '123456';
+          }
           const { data: result, error } = await supabase.from('profiles_guru').insert([data]).select();
           if (error) {
             // Graceful degradation if column missing
@@ -352,7 +356,9 @@ export default function Guru() {
         nip: String(item.NIP || item.nip || ''),
         email: item.Email || item.email || '',
         phone: item.Telepon || item.phone || String(item.phone || ''),
-        school_id: school.npsn
+        school_id: school.npsn,
+        password: String(item.Password || item.password || '123456'),
+        must_change_password: true
       }));
 
       try {

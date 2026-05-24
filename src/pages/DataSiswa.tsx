@@ -20,6 +20,8 @@ export interface Student {
   status: 'Aktif' | 'Nonaktif' | 'Lulus' | 'Pindah';
   photourl?: string;
   school_id: string;
+  password?: string;
+  must_change_password?: boolean;
 }
 
 export default function DataSiswa() {
@@ -53,7 +55,8 @@ export default function DataSiswa() {
     class: '',
     whatsapp: '',
     status: 'Aktif',
-    photourl: ''
+    photourl: '',
+    password: ''
   });
 
   useEffect(() => {
@@ -99,10 +102,21 @@ export default function DataSiswa() {
 
   const handleOpenModal = (student?: Student) => {
     if (student) {
-      setFormData(student);
+      setFormData({
+        ...student,
+        password: student.password || ''
+      });
       setIsEditing(true);
     } else {
-      setFormData({ nisn: '', nama: '', class: '', whatsapp: '', status: 'Aktif', photourl: '' });
+      setFormData({ 
+        nisn: '', 
+        nama: '', 
+        class: '', 
+        whatsapp: '', 
+        status: 'Aktif', 
+        photourl: '',
+        password: '' 
+      });
       setIsEditing(false);
     }
     setIsModalOpen(true);
@@ -140,7 +154,8 @@ export default function DataSiswa() {
             whatsapp: formData.whatsapp,
             status: formData.status,
             photourl: formData.photourl,
-            school_id: school.npsn
+            school_id: school.npsn,
+            password: formData.password
           })
           .eq('id', formData.id);
 
@@ -156,7 +171,9 @@ export default function DataSiswa() {
             whatsapp: formData.whatsapp,
             status: formData.status,
             photourl: formData.photourl,
-            school_id: school.npsn
+            school_id: school.npsn,
+            password: formData.password || '123456',
+            must_change_password: true
           }])
           .select();
 
@@ -212,7 +229,9 @@ export default function DataSiswa() {
           whatsapp: String(item.WhatsApp || item.whatsapp || item.noHp || ''),
           status: item.Status || item.status || 'Aktif',
           photourl: item.photourl || '',
-          school_id: school.npsn
+          school_id: school.npsn,
+          password: String(item.Password || item.password || '123456'),
+          must_change_password: true
         })).filter(s => s.nama);
 
         if (toInsert.length > 0) {

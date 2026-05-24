@@ -98,8 +98,9 @@ export default function Layout() {
     'Keuangan': false
   });
 
-  // Fetch User Plan and Approval Status
+  // Fetch User Plan, Approval Status, and Force Password Change
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
+  const [mustChangePassword, setMustChangePassword] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -107,21 +108,39 @@ export default function Layout() {
       if (isDemoMode) return;
 
       const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          // Double check role bypass for principal emails
-          // ONLY apply this if we are not already in a Guru/Siswa session to avoid overwriting them
-          const currentRole = localStorage.getItem('userRole');
-          const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
+      if (user) {
+        const currentRole = localStorage.getItem('userRole') as Role;
+        const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
+        
+        const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
+        if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
+          const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+          setRole(forcedRole);
+          localStorage.setItem('userRole', forcedRole);
+        }
+        
+        // 1. Check for Forced Password Change flag
+        if (currentRole === 'Guru' || currentRole === 'Siswa') {
+          const table = currentRole === 'Guru' ? 'profiles_guru' : 'profiles_siswa';
+          const { data: userData } = await supabase
+            .from(table)
+            .select('must_change_password')
+            .eq('id', user.id)
+            .maybeSingle();
           
-          const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
-          if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
-            const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
-            console.log('DEBUG [Layout] Principal bypass detected, forcing role:', forcedRole);
-            setRole(forcedRole);
-            localStorage.setItem('userRole', forcedRole);
+          if (userData?.must_change_password) {
+            setMustChangePassword(true);
+            const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
+            if (!location.pathname.includes('/dashboard/profile')) {
+              navigate(`${prefix}/dashboard/profile`);
+              toast.error('Keamanan: Silakan ganti password default Anda untuk melanjutkan.', {
+                id: 'force-password-change'
+              });
+            }
           }
+        }
 
-          // Coba periksa di table profiles (umum) atau table spesifik berdasarkan role jika perlu
+        // 2. Original Approval & Plan checks
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -132,12 +151,12 @@ export default function Layout() {
           if (profile.subscription_plan) {
             setUserPlan(profile.subscription_plan);
           }
-          setIsApproved(profile.is_approved ?? false); // default false jika null
+          setIsApproved(profile.is_approved ?? false);
         }
       }
     }
     fetchProfile();
-  }, []);
+  }, [location.pathname]); // Re-check on path change to keep them locked in profile if needed
 
   // Redirect if not approved (Only for Admin - SuperAdmin is exempt)
   useEffect(() => {
@@ -454,9 +473,11 @@ export default function Layout() {
     }
   };
 
-  const navItems = getNavItems();
+  const navItems = mustChangePassword 
+    ? [{ icon: User, label: 'Ganti Password', path: (schoolSlug ? `/s/${schoolSlug}` : '') + '/dashboard/profile' }]
+    : getNavItems();
 
-  const secondaryItems = [
+  const secondaryItems = mustChangePassword ? [] : [
     { icon: Megaphone, label: 'Pengumuman', path: `${schoolSlug ? '/s/' + schoolSlug : ''}/dashboard/pengumuman` },
     { icon: MessageSquare, label: 'Kritik & Saran', path: `${schoolSlug ? '/s/' + schoolSlug : ''}/dashboard/feedback` },
   ];
