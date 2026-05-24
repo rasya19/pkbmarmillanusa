@@ -65,13 +65,82 @@ export default function Login() {
     keysToInitialClear.forEach(k => localStorage.removeItem(k));
 
     try {
-      const emailTrimmed = formData.email.trim().toLowerCase();
-      const passwordRaw = formData.password;
+      // 1. UNIVERSAL AUTH (PRIORITY)
+      if (formData.email && formData.password) {
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: formData.email.trim(),
+          password: formData.password,
+        });
 
-      console.log('DEBUG [Auth] Attempting login for:', emailTrimmed);
+        if (authError) {
+          // Use original message from server as requested
+          throw authError;
+        }
 
-      // 1. Special Handling for Siswa (NISN Based - No Auth)
-      if (loginRole === 'Siswa') {
+        if (data.user) {
+          console.log('DEBUG [Auth] Success! User ID:', data.user.id);
+          localStorage.setItem('userEmail', data.user.email || '');
+          
+          // 2. Resolve Role (Simple & Universal)
+          let finalRole: string = 'Guru';
+          let profileName = 'User';
+
+          // Principal Email Bypass (Hardcoded Security)
+          const userEmailLower = data.user.email?.toLowerCase().trim();
+          if (userEmailLower === 'ismanto095@gmail.com') {
+            finalRole = 'SuperAdmin';
+            profileName = 'Administrator';
+          } else if (userEmailLower === 'pkbmarmillanusa@gmail.com' || userEmailLower === 'armillanusa@gmail.com') {
+            finalRole = 'Admin';
+            profileName = 'Admin PKBM Armilla';
+          } else {
+            // Check profiles table for role
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role, nama')
+              .eq('id', data.user.id)
+              .maybeSingle();
+
+            if (profile) {
+              finalRole = profile.role || 'Guru';
+              profileName = profile.nama || 'User';
+              if (profile.role === 'Admin' || profile.role === 'SuperAdmin') {
+                localStorage.setItem('adminName', profileName);
+              }
+            } else {
+              // Try Guru Profile
+              const { data: guru } = await supabase
+                .from('profiles_guru')
+                .select('nama')
+                .eq('id', data.user.id)
+                .maybeSingle();
+              
+              if (guru) {
+                finalRole = 'Guru';
+                profileName = guru.nama;
+                localStorage.setItem('teacherName', profileName);
+              } else {
+                finalRole = data.user.user_metadata?.role || 'Guru';
+                profileName = data.user.user_metadata?.name || 'User';
+              }
+            }
+          }
+
+          localStorage.setItem('userRole', finalRole);
+          if (finalRole === 'Admin' || finalRole === 'SuperAdmin') {
+            localStorage.setItem('adminName', profileName);
+          } else if (finalRole === 'Guru') {
+            localStorage.setItem('teacherName', profileName);
+          }
+
+          localStorage.removeItem('isDemoMode');
+          navigate('/dashboard');
+          return;
+        }
+      }
+
+      // 3. Fallback for Student (NISN) if email is empty
+      if (formData.nisn) {
         const { data: sData, error: sError } = await supabase
           .from('profiles_siswa')
           .select('*')
@@ -90,85 +159,11 @@ export default function Login() {
         return;
       }
 
-      // 2. Verified Supabase Auth Login (Admin & Guru)
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: emailTrimmed,
-        password: passwordRaw,
-      });
+      throw new Error('Silakan sertakan Email/Password atau NISN.');
 
-      if (authError) {
-        console.error('DEBUG [Auth] Supabase Rejection:', authError.message);
-        throw authError;
-      }
-
-      if (data.user) {
-        console.log('DEBUG [Auth] Success! User ID:', data.user.id);
-        localStorage.setItem('userEmail', data.user.email || '');
-        
-        // 3. Resolve Role intelligently
-        let finalRole: string = 'Siswa';
-        let profileName = '';
-
-        // Check for Principal/Owner Emails FIRST (Bypass)
-        const userEmailLower = data.user.email?.toLowerCase().trim();
-        const superAdminEmails = ['ismanto095@gmail.com'];
-        const adminEmails = ['pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
-
-        if (userEmailLower && superAdminEmails.includes(userEmailLower)) {
-          finalRole = 'SuperAdmin';
-          profileName = 'Administrator';
-        } else if (userEmailLower && adminEmails.includes(userEmailLower)) {
-          finalRole = 'Admin';
-          profileName = 'Admin PKBM Armilla';
-        } else {
-          // Normal user: check profiles tables
-          // Try Guru Profile
-          const { data: guruProfile } = await supabase
-            .from('profiles_guru')
-            .select('*')
-            .eq('id', data.user.id)
-            .maybeSingle();
-
-          if (guruProfile) {
-            finalRole = 'Guru';
-            profileName = guruProfile.nama || guruProfile.name || 'Guru';
-            localStorage.setItem('teacherName', profileName);
-            localStorage.setItem('teacherEmail', guruProfile.email || '');
-          } else {
-            // Try Admin/General Profile
-            const { data: adminProfile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', data.user.id)
-              .maybeSingle();
-            
-            if (adminProfile) {
-              finalRole = adminProfile.role || 'Admin';
-              profileName = adminProfile.nama || adminProfile.name || 'Admin';
-              if (adminProfile.school_id) localStorage.setItem('school_id', adminProfile.school_id);
-            } else {
-              // Metadata fallback
-              finalRole = data.user.user_metadata?.role || 'Guru';
-              profileName = data.user.user_metadata?.name || 'User';
-            }
-          }
-        }
-
-        console.log('DEBUG [Auth] Final Resolved Role:', finalRole);
-        localStorage.setItem('userRole', finalRole);
-        
-        if (finalRole === 'Admin' || finalRole === 'SuperAdmin') {
-          localStorage.setItem('adminName', profileName);
-        }
-
-        localStorage.removeItem('isDemoMode');
-        navigate('/dashboard');
-      }
     } catch (error: any) {
-      console.error('DEBUG [Auth] Final Catch:', error.message);
-      setErrorMsg(error.message === 'Invalid login credentials' 
-        ? 'Email atau Password salah. (Supabase Auth Reject)' 
-        : error.message);
+      console.error('DEBUG [Auth] Error:', error.message);
+      setErrorMsg(error.message); // Showing direct error message as requested
     } finally {
       setIsLoading(false);
     }
