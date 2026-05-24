@@ -108,7 +108,7 @@ export default function Layout() {
     if (currentRole !== 'Guru' && currentRole !== 'Siswa') return;
 
     let logoutTimer: any;
-    const IDLE_TIMEOUT = 10 * 1000; // 10 seconds (Testing Mode)
+    const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
     const resetTimer = () => {
       if (logoutTimer) clearTimeout(logoutTimer);
