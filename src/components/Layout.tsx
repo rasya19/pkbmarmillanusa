@@ -345,8 +345,8 @@ export default function Layout() {
             icon: FolderOpen, 
             label: 'Master Data', 
             subItems: [
-              { icon: Users, label: 'Manajemen Siswa', path: `${prefix}/dashboard/data-siswa`, minPlan: 'Silver' },
-              { icon: UserCheck, label: 'Manajemen Guru', path: `${prefix}/dashboard/data-guru`, minPlan: 'Silver' },
+              { icon: Users, label: 'Data Siswa', path: `${prefix}/dashboard/data-siswa`, isLocked: false },
+              { icon: UserCheck, label: 'Data Guru', path: `${prefix}/dashboard/data-guru`, isLocked: false },
               { icon: Book, label: 'Kelola Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran`, minPlan: 'Silver' },
               { icon: Layers, label: 'Manajemen Kelas', path: `${prefix}/dashboard/kelas`, minPlan: 'Silver' },
               { icon: UserPlus, label: 'Data Pendaftar (PPDB)', path: `${prefix}/dashboard/ppdb`, minPlan: 'Silver' },
@@ -408,6 +408,7 @@ export default function Layout() {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
           { icon: Users, label: 'Data Siswa', path: `${prefix}/dashboard/data-siswa` },
+          { icon: UserCheck, label: 'Data Guru', path: `${prefix}/dashboard/data-guru` },
           {
             icon: BookOpen,
             label: 'Akademik',

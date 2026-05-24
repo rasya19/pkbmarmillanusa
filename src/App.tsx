@@ -201,6 +201,8 @@ function AppContent() {
       <Route path="/register-school" element={<RegisterSchool />} />
       <Route path="/register-user" element={<RegisterUser />} />
       <Route path="/ppdb" element={<PPDBRegistration />} />
+      <Route path="/students" element={<Navigate to="/dashboard/data-siswa" replace />} />
+      <Route path="/teachers" element={<Navigate to="/dashboard/data-guru" replace />} />
       
       {/* Portal Dashboard Routes - Shared by all domains */}
       <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
@@ -247,7 +249,14 @@ function AppContent() {
             <Route index element={<Dashboard />} />
             {/* ... other child routes ... */}
             <Route path="course/:id" element={<CourseDetail />} />
-            <Route path="data-siswa" element={<DataSiswa />} />
+            <Route path="students" element={<DataSiswa />} />
+          <Route path="teachers" element={<Guru />} />
+          <Route path="students" element={<DataSiswa />} />
+          <Route path="teachers" element={<Guru />} />
+          <Route path="teachers" element={<Guru />} />
+          <Route path="students" element={<DataSiswa />} />
+          <Route path="teachers" element={<Guru />} />
+          <Route path="data-siswa" element={<DataSiswa />} />
             <Route path="soal" element={<BankSoal />} />
             <Route path="soal/:id/detail" element={<ButirSoal />} />
             <Route path="hasil-ujian" element={<HasilUjian />} />
