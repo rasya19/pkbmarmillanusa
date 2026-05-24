@@ -103,6 +103,7 @@ export default function Layout() {
   const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [mustChangePassword, setMustChangePassword] = useState<boolean>(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // Auto Logout (Session Timeout) - 15 minutes of inactivity
   useEffect(() => {
@@ -110,7 +111,7 @@ export default function Layout() {
     if (currentRole !== 'Guru' && currentRole !== 'Siswa') return;
 
     let logoutTimer: any;
-    const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+    const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
     const resetTimer = () => {
       if (logoutTimer) clearTimeout(logoutTimer);
@@ -145,25 +146,25 @@ export default function Layout() {
     };
   }, [location.pathname, navigate, schoolSlug]);
 
+  // Auth & Session Persistence Guard
   useEffect(() => {
-    async function fetchProfile() {
-      const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
-      if (isDemoMode) return;
+    let authListener: any;
 
+    async function checkSession() {
+      const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
+      if (isDemoMode) {
+        setIsCheckingAuth(false);
+        return;
+      }
+
+      // 1. Initial Get User
       const { data: { user } } = await supabase.auth.getUser();
+      
       if (user) {
         setUserId(user.id);
         const currentRole = localStorage.getItem('userRole') as Role;
-        const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
         
-        const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
-        if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
-          const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
-          setRole(forcedRole);
-          localStorage.setItem('userRole', forcedRole);
-        }
-        
-        // 1. Check for Forced Password Change flag
+        // 2. Immediate Security Check for Teachers/Students
         if (currentRole === 'Guru' || currentRole === 'Siswa') {
           const table = currentRole === 'Guru' ? 'profiles_guru' : 'profiles_siswa';
           const { data: userData } = await supabase
@@ -174,10 +175,22 @@ export default function Layout() {
           
           if (userData?.must_change_password) {
             setMustChangePassword(true);
+          } else {
+            setMustChangePassword(false);
           }
         }
 
-        // 2. Original Approval & Plan checks
+        // 3. Admin Roles & Permissions
+        const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
+        const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
+        
+        if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
+          const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+          setRole(forcedRole);
+          localStorage.setItem('userRole', forcedRole);
+        }
+
+        // 4. Fetch Profile Details
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -185,15 +198,41 @@ export default function Layout() {
           .maybeSingle();
         
         if (profile) {
-          if (profile.subscription_plan) {
-            setUserPlan(profile.subscription_plan);
-          }
+          if (profile.subscription_plan) setUserPlan(profile.subscription_plan);
           setIsApproved(profile.is_approved ?? false);
         }
+      } else {
+        // No session
+        setUserId(null);
+        setMustChangePassword(false);
       }
+      
+      setIsCheckingAuth(false);
     }
-    fetchProfile();
-  }, [location.pathname]); // Re-check on path change to keep them locked in profile if needed
+
+    // Initialize check
+    checkSession();
+
+    // Set up auth state change listener to handle browser reopens/re-auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('DEBUG [Layout] Auth state changed:', event);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        checkSession();
+      } else if (event === 'SIGNED_OUT') {
+        setUserId(null);
+        setMustChangePassword(false);
+        setIsCheckingAuth(false);
+        const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
+        navigate(`${prefix}/login`);
+      }
+    });
+
+    authListener = subscription;
+
+    return () => {
+      if (authListener) authListener.unsubscribe();
+    };
+  }, [location.pathname, schoolSlug, navigate]);
 
   // Redirect if not approved (Only for Admin - SuperAdmin is exempt)
   useEffect(() => {
@@ -878,13 +917,26 @@ export default function Layout() {
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Outlet />
-          </motion.div>
+          {isCheckingAuth ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="w-10 h-10 border-4 border-brand-accent border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 animate-pulse">Verifikasi Keamanan Sesi...</p>
+            </div>
+          ) : !mustChangePassword ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Outlet />
+            </motion.div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-slate-50 rounded-[2rem] border border-dashed border-brand-accent/20">
+              <ShieldAlert className="w-12 h-12 text-brand-accent mb-4 animate-bounce" />
+              <h2 className="text-xl font-black text-brand-sidebar uppercase italic tracking-tighter">Akses <span className="text-brand-accent">Terkunci</span></h2>
+              <p className="text-xs font-bold text-slate-500 mt-2 max-w-xs mx-auto">Selesaikan pembaruan kata sandi pada jendela pop-up untuk membuka akses dashboard Anda.</p>
+            </div>
+          )}
         </div>
 
         {/* Password Change Modal */}
