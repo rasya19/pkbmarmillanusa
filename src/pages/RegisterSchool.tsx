@@ -27,7 +27,6 @@ export default function RegisterSchool() {
       const { error } = await supabase.from('registrations').insert([{
         school_name: formData.name,
         slug: slugVal,
-        school_slug: slugVal,
         npsn: formData.npsn,
         admin_name: formData.adminName,
         admin_email: formData.adminEmail,

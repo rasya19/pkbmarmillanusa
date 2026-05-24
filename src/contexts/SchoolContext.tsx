@@ -190,41 +190,13 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       // Strictly fetch by slug column (Mandat Mutlak Pak Ismanto - ANTI UUID ERROR)
-      let { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('schools')
         .select('*')
         .eq('slug', normalizedSlug)
-        .maybeSingle();
-      
-      // Fallback to school_slug if slug is not found
-      if (!data && !fetchError) {
-        const { data: altData, error: altError } = await supabase
-          .from('schools')
-          .select('*')
-          .eq('school_slug', normalizedSlug)
-          .maybeSingle();
-        data = altData;
-        fetchError = altError;
-      }
+        .single();
       
       if (!fetchError && data) {
-        const { data: registration } = await supabase
-          .from('registrations')
-          .select('status, school_name')
-          .eq('slug', normalizedSlug)
-          .maybeSingle();
-
-        const isMaster = hostname.includes('rsch.my.id') || hostname.includes('localhost') || hostname.includes('run.app') || hostname.includes('vercel.app');
-        const isVerified = (registration && registration.status === 'verified') || isMaster || normalizedSlug === 'pkbmarmillanusa';
-        
-        if (!isVerified) {
-          setIsBlocked(true);
-          setError('403: Layanan Nonaktif');
-          setSchool(null);
-          setLoading(false);
-          return;
-        }
-        
         setIsBlocked(false);
         
         const rawStatus = data.status;
@@ -242,7 +214,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           const mappedData: School = {
             ...data,
             id: data.id,
-            name: registration?.school_name || data.school_name || data.name || 'PKBM Armilla Nusa',
+            name: data.name || 'PKBM Armilla Nusa',
             accreditation: data.akreditasi || data.accreditation,
             address: data.alamat || data.address,
             adminEmail: data.admin_email,

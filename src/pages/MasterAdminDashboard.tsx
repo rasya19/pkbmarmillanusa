@@ -86,43 +86,30 @@ export default function MasterAdminDashboard() {
   }
 
   const fetchData = async () => {
-    console.log('DEBUG [MasterAdmin] Starting fetch for tab:', activeTab);
     setIsLoading(true);
     try {
-      // 1. Always fetch registrations to keep stats accurate
-      const { data: regData, error: regError } = await supabase
-        .from('registrations')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (regError) {
-        console.error('DEBUG [MasterAdmin] Registrations Fetch Error:', regError);
-        toast.error('Gagal mengambil data pendaftaran.');
+      if (activeTab === 'Registrasi Sekolah') {
+        const { data, error } = await supabase
+          .from('registrations')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        setRegistrations(data || []);
       } else {
-        console.log('DEBUG [MasterAdmin] Registrations Fetched:', regData?.length || 0);
-        setRegistrations(regData || []);
-      }
-
-      // 2. Fetch PPDB if needed
-      if (activeTab === 'PPDB Global') {
-        const { data: ppdbData, error: ppdbError } = await supabase
+        const { data, error } = await supabase
           .from('ppdb_registrations')
           .select('*')
           .order('created_at', { ascending: false });
         
-        if (ppdbError) {
-          console.error('DEBUG [MasterAdmin] PPDB Fetch Error:', ppdbError);
-        } else {
-          setStudentRegistrations(ppdbData || []);
-        }
+        if (error) throw error;
+        setStudentRegistrations(data || []);
       }
     } catch (error) {
-      console.error('DEBUG [MasterAdmin] Unexpected Error:', error);
-      toast.error('Terjadi kesalahan saat memuat data.');
+      console.error('Error fetching data:', error);
+      toast.error('Gagal mengambil data.');
     } finally {
-      // MANDAT MUTLAK: Matikan Loading State!
       setIsLoading(false);
-      console.log('DEBUG [MasterAdmin] Loading State Deactivated');
     }
   };
 
@@ -147,8 +134,7 @@ export default function MasterAdminDashboard() {
         .from('registrations')
         .update({ 
           status: 'approved',
-          slug: slugVal,
-          school_slug: slugVal
+          slug: slugVal 
         })
         .eq('id', reg.id);
       
@@ -159,19 +145,16 @@ export default function MasterAdminDashboard() {
 
       console.log('DEBUG [Approval] Slug generated:', slugVal);
 
-      // 3. Upsert into schools table (Avoid sending Slug to UUID ID column)
+      // 3. Upsert into schools table
       const schoolData = {
         name: reg.school_name,
-        school_name: reg.school_name,
         slug: slugVal,
-        school_slug: slugVal,
         npsn: reg.npsn,
         is_active: true,
         subscription_plan: reg.subscription_plan || 'Silver',
         whatsapp: reg.whatsapp
       };
 
-      // We use school_slug or slug as the conflict target or upsert by slug if it's unique
       const { error: schoolError } = await supabase
         .from('schools')
         .upsert([schoolData], { onConflict: 'slug' });
@@ -261,12 +244,10 @@ export default function MasterAdminDashboard() {
     }
   };
 
-  const filteredRegistrations = registrations.filter(r => {
-    const sName = (r.school_name || r.name || '').toLowerCase();
-    const sNpsn = (r.npsn || '').toLowerCase();
-    const search = searchTerm.toLowerCase();
-    return sName.includes(search) || sNpsn.includes(search);
-  });
+  const filteredRegistrations = registrations.filter(r => 
+    r.school_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.npsn.includes(searchTerm)
+  );
 
   const filteredStudents = studentRegistrations.filter(r => 
     r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -369,11 +350,11 @@ export default function MasterAdminDashboard() {
                       <td className="py-6">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-slate-100 rounded-[1rem] flex items-center justify-center font-black text-brand-sidebar italic text-xl group-hover:bg-brand-accent group-hover:text-white transition-all">
-                            {(r.school_name || r.name || 'S')[0]}
+                            {r.school_name[0]}
                           </div>
                           <div>
-                            <p className="text-xs font-black text-brand-sidebar italic uppercase tracking-tight">{r.school_name || r.name || 'Sekolah Tanpa Nama'}</p>
-                            <p className="text-[10px] font-bold text-slate-400">NPSN: {r.npsn || '-'}</p>
+                            <p className="text-xs font-black text-brand-sidebar italic uppercase tracking-tight">{r.school_name}</p>
+                            <p className="text-[10px] font-bold text-slate-400">NPSN: {r.npsn}</p>
                           </div>
                         </div>
                       </td>
