@@ -61,10 +61,13 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const resolveByHostname = async () => {
-      const hostname = window.location.hostname.toLowerCase().trim();
+      let rawHostname = window.location.hostname.toLowerCase().trim();
+      // Clean www. prefix for consistent resolution
+      const hostname = rawHostname.startsWith('www.') ? rawHostname.replace('www.', '') : rawHostname;
       
+      console.log('DEBUG [SchoolContext] Resolving for hostname:', hostname);
+
       const isMaster = hostname === 'rsch.my.id' || 
-                       hostname === 'www.rsch.my.id' || 
                        hostname.includes('pkbmarmillanusa') ||
                        hostname.includes('localhost') || 
                        hostname.includes('127.0.0.1') || 
@@ -80,22 +83,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       }
       
       let slug = '';
-      let customDomainPath = '';
+      let customDomainPath = hostname; // We'll try this as a fallback if slug fails
 
-      if (hostname.includes('rsch.my.id')) {
-        const parts = hostname.split('.');
-        if (parts.length > 3) slug = parts[0];
+      // Extract slug from rsch.my.id (e.g., sekolah.rsch.my.id -> slug: sekolah)
+      if (hostname.endsWith('.rsch.my.id')) {
+        const platformSuffix = 'rsch.my.id';
+        const slugPart = hostname.substring(0, hostname.length - platformSuffix.length - 1);
+        if (slugPart) {
+          slug = slugPart.split('.')[0]; // Take the first part in case of multiple subdomains
+          console.log('DEBUG [SchoolContext] Extracted slug from platform domain:', slug);
+        }
       } else if (hostname.includes('run.app') || hostname.includes('vercel.app')) {
-        const match = hostname.match(/pkbm[a-z0-0]+/i);
+        const match = hostname.match(/pkbm[a-z0-9]+/i);
         if (match) slug = match[0];
       }
 
-      if (!slug && !isMaster) {
-        customDomainPath = hostname;
-      }
-
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user && !slug && !customDomainPath) {
+      if (session?.user && !slug) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('school_id')
@@ -103,26 +107,50 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
         
         if (profile?.school_id) {
+          console.log('DEBUG [SchoolContext] Using slug from user profile:', profile.school_id);
           slug = profile.school_id;
         }
       }
 
+      // If we are on master landing page and no specific school context is found
       if (isMaster && !slug) {
+        console.log('DEBUG [SchoolContext] Master domain landing, no school resolution needed.');
         setLoading(false);
         return;
       }
 
+      // Priority 1: Try resolving by slug
       if (slug) {
-        await setSchoolBySlug(slug);
-      } else if (customDomainPath) {
+        try {
+          const { data, error: slugError } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('slug', slug)
+            .maybeSingle();
+
+          if (data && !slugError) {
+            console.log('DEBUG [SchoolContext] Found school by slug:', data.name);
+            await setSchoolBySlug(slug);
+            return; // Success
+          }
+          console.warn('DEBUG [SchoolContext] Slug lookup failed for:', slug, slugError);
+        } catch (e) {
+          console.error('DEBUG [SchoolContext] Slug resolution error:', e);
+        }
+      }
+
+      // Priority 2: Fallback to resolving by custom domain if slug lookup failed or no slug found
+      if (customDomainPath) {
+        console.log('DEBUG [SchoolContext] Attempting lookup by custom_domain:', customDomainPath);
         try {
           const { data, error: domainError } = await supabase
             .from('schools')
             .select('*')
             .eq('custom_domain', customDomainPath)
-            .single();
+            .maybeSingle();
             
           if (!domainError && data) {
+            console.log('DEBUG [SchoolContext] Found school by custom_domain:', data.name);
             const rawStatus = data.status;
             const isStatusActive = rawStatus === undefined || rawStatus === null || 
                                   rawStatus.toLowerCase() === 'active' || 
@@ -163,11 +191,14 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
                 tipe_lembaga: data.tipe_lembaga || 'KESETARAAN'
               };
               setSchool(mappedData);
+              setError(null);
             }
           } else {
+            console.warn('DEBUG [SchoolContext] All lookups failed. Domain error:', domainError);
             setError('Sekolah tidak ditemukan');
           }
         } catch (err) {
+          console.error('DEBUG [SchoolContext] Domain resolution crash:', err);
           setError('Gagal memproses domain');
         } finally {
           setLoading(false);
