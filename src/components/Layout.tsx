@@ -165,7 +165,20 @@ export default function Layout() {
       
       if (user) {
         setUserId(user.id);
-        const currentRole = localStorage.getItem('userRole') as Role;
+        const rawRole = localStorage.getItem('userRole') || 'Siswa';
+        const lowerRole = rawRole.toLowerCase();
+
+        // 1a. ADMIN BYPASS (BARIS PALING ATAS - CRITICAL FIX)
+        if (lowerRole === 'admin' || lowerRole === 'superadmin' || user.user_metadata?.role?.toLowerCase() === 'admin') {
+          console.log('DEBUG [Auth] Admin bypass confirmed for:', user.email);
+          setRole(lowerRole.includes('super') ? 'SuperAdmin' : 'Admin');
+          setMustChangePassword(false);
+          setIsApproved(true);
+          setIsCheckingAuth(false);
+          return;
+        }
+
+        const currentRole = rawRole as Role;
         
         // 2. Immediate Security Check for Teachers/Students
         const adminRoles = ['Admin', 'SuperAdmin'];
@@ -180,7 +193,7 @@ export default function Layout() {
           const forceChange = userData?.must_change_password === true || userData?.harus_mengubah_kata_sandi === true;
           setMustChangePassword(forceChange);
         } else {
-          // Explicitly clear for Admins
+          // Explicitly clear for Admins (Backup check)
           setMustChangePassword(false);
         }
 
@@ -240,7 +253,10 @@ export default function Layout() {
 
   // Redirect if not approved (Only for Admin - SuperAdmin is exempt)
   useEffect(() => {
-    const isAdminOnly = role === 'Admin';
+    const currentRole = localStorage.getItem('userRole');
+    if (currentRole === 'SuperAdmin') return; // BYPASS MUTLAK
+    
+    const isAdminOnly = currentRole === 'Admin';
     const hostname = window.location.hostname.toLowerCase();
     const isArmillaInstance = hostname.includes('pkbmarmillanusa') || school?.slug === 'pkbmarmillanusa';
     
@@ -250,7 +266,7 @@ export default function Layout() {
     if (isAdminOnly && isApproved === false && location.pathname !== '/pending-activation') {
       navigate('/pending-activation');
     }
-  }, [isApproved, location.pathname, navigate, role, school?.slug]);
+  }, [isApproved, location.pathname, navigate, school?.slug]);
 
   // URL Guard for Tamu/Guest Role & Subscription Plan
   useEffect(() => {

@@ -156,8 +156,12 @@ function AppContent() {
   const location = useLocation();
   const isSubroutePath = location.pathname.startsWith('/s/') || location.pathname.startsWith('/dashboard');
   const isPpdbPath = location.pathname === '/ppdb' || location.pathname.startsWith('/ppdb/');
+  
+  // 1. ADMIN BYPASS (BARIS PALING ATAS - Sesuai Strategi Bisnis)
+  const userRole = localStorage.getItem('userRole')?.toLowerCase() || '';
+  const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
-  if (isBlocked && !isPpdbPath) {
+  if (isBlocked && !isPpdbPath && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-red-50 text-slate-800 font-sans p-6 text-center">
         <div className="max-w-md w-full border border-red-100 bg-white rounded-3xl shadow-xl p-8">
