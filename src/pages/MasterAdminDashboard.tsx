@@ -134,7 +134,8 @@ export default function MasterAdminDashboard() {
         .from('registrations')
         .update({ 
           status: 'approved',
-          slug: slugVal 
+          slug: slugVal,
+          school_slug: slugVal
         })
         .eq('id', reg.id);
       
@@ -145,20 +146,22 @@ export default function MasterAdminDashboard() {
 
       console.log('DEBUG [Approval] Slug generated:', slugVal);
 
-      // 3. Upsert into schools table
+      // 3. Upsert into schools table (Avoid sending Slug to UUID ID column)
       const schoolData = {
-        id: slugVal,
         name: reg.school_name,
+        school_name: reg.school_name,
         slug: slugVal,
+        school_slug: slugVal,
         npsn: reg.npsn,
         is_active: true,
         subscription_plan: reg.subscription_plan || 'Silver',
         whatsapp: reg.whatsapp
       };
 
+      // We use school_slug or slug as the conflict target or upsert by slug if it's unique
       const { error: schoolError } = await supabase
         .from('schools')
-        .upsert([schoolData], { onConflict: 'id' });
+        .upsert([schoolData], { onConflict: 'slug' });
 
       if (schoolError) {
         console.error('DEBUG [Approval] Schools Upsert Error:', schoolError);

@@ -33,12 +33,11 @@ const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
 
 export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [school, setSchool] = useState<School | null>(null);
-  const [loading, setLoading] = useState(true); // Start loading as true
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMasterDomain, setIsMasterDomain] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   
-  // Safety effect: Never block master/preview domains
   useEffect(() => {
     const hostname = window.location.hostname.toLowerCase();
     const isMaster = hostname.includes('rsch.my.id') || 
@@ -50,7 +49,6 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
                      hostname.includes('ais-pre');
     
     if (isMaster && isBlocked) {
-      console.log('DEBUG [SchoolContext] Unblocking master/target domain');
       setIsBlocked(false);
     }
   }, [isBlocked]);
@@ -64,14 +62,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const resolveByHostname = async () => {
       const hostname = window.location.hostname.toLowerCase().trim();
-      // Expanded list of base domains to handle .my.id and .rsch.my.id properly
-      const baseDomains = ['rsch.my.id', 'my.id', 'vercel.app', 'run.app', 'web.app'];
-      
-      console.log('DEBUG [SchoolContext] Resolving hostname:', hostname);
       
       const isMaster = hostname === 'rsch.my.id' || 
                        hostname === 'www.rsch.my.id' || 
-                       hostname.includes('pkbmarmillanusa') || // Broad check for the specific school
+                       hostname.includes('pkbmarmillanusa') ||
                        hostname.includes('localhost') || 
                        hostname.includes('127.0.0.1') || 
                        hostname.includes('ais-dev') || 
@@ -81,32 +75,27 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       
       setIsMasterDomain(isMaster);
       
-      // Force unblocked for master/dev/target domains
       if (isMaster) {
         setIsBlocked(false);
       }
       
       let slug = '';
-      let customDomain = '';
+      let customDomainPath = '';
 
-      // Improved slug extraction
       if (hostname.includes('rsch.my.id')) {
         const parts = hostname.split('.');
-        if (parts.length > 3) slug = parts[0]; // e.g. pkbmxxx.rsch.my.id
+        if (parts.length > 3) slug = parts[0];
       } else if (hostname.includes('run.app') || hostname.includes('vercel.app')) {
-        // Try to find pkbm in the hostname
         const match = hostname.match(/pkbm[a-z0-0]+/i);
         if (match) slug = match[0];
       }
 
       if (!slug && !isMaster) {
-        customDomain = hostname;
+        customDomainPath = hostname;
       }
 
-      // Check if we already have a session, maybe we can resolve by profile
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user && !slug && !customDomain) {
-        console.log('DEBUG [SchoolContext] No domain resolution, trying user profile...');
+      if (session?.user && !slug && !customDomainPath) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('school_id')
@@ -114,30 +103,26 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
         
         if (profile?.school_id) {
-          console.log('DEBUG [SchoolContext] Resolved slug from profile:', profile.school_id);
           slug = profile.school_id;
         }
       }
 
       if (isMaster && !slug) {
-        console.log('DEBUG [SchoolContext] Master domain detected');
         setLoading(false);
         return;
       }
 
       if (slug) {
         await setSchoolBySlug(slug);
-      } else if (customDomain) {
+      } else if (customDomainPath) {
         try {
-          const { data, error } = await supabase
+          const { data, error: domainError } = await supabase
             .from('schools')
             .select('*')
-            .eq('custom_domain', customDomain)
+            .eq('custom_domain', customDomainPath)
             .single();
             
-          if (!error && data) {
-            console.log('DEBUG [SchoolContext] Found school by custom domain:', data.name);
-            
+          if (!domainError && data) {
             const rawStatus = data.status;
             const isStatusActive = rawStatus === undefined || rawStatus === null || 
                                   rawStatus.toLowerCase() === 'active' || 
@@ -146,57 +131,48 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
                                   data.is_active === undefined;
             
             if (!isStatusActive) {
-              console.warn('DEBUG [SchoolContext] Custom domain school is INACTIVE. Status:', rawStatus);
               setError('Sekolah belum aktif');
               setSchool(null);
             } else {
-              // Verification check
-              console.log('DEBUG [SchoolContext] Checking registration for custom domain ID:', data.id || data.slug);
-              const { data: registration, error: regError } = await supabase
+              const { data: registration } = await supabase
                 .from('registrations')
                 .select('status, school_name')
-                .eq('school_id', data.id || data.slug)
+                .eq('slug', data.slug)
                 .maybeSingle();
               
               const isVerified = (registration && registration.status === 'verified') || isMaster || hostname.includes('pkbmarmillanusa');
 
               if (!isVerified) {
-                console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status');
                 setIsBlocked(true);
                 setError('403: Layanan Nonaktif');
                 setSchool(null);
                 setLoading(false);
                 return;
               }
-              const schoolName = registration?.school_name;
-              // Map DB snake_case columns to camelCase interface
               const mappedData: School = {
                 ...data,
-                id: data.id || data.slug, // Ensure we have an ID for updates
-                name: schoolName || data.name || data.nama || 'PKBM Armilla Nusa',
+                id: data.id, 
+                name: registration?.school_name || data.name || 'PKBM Armilla Nusa',
                 accreditation: data.akreditasi || data.accreditation,
                 address: data.alamat || data.address,
-                adminEmail: data.adminEmail || data.admin_email,
-                logoUrl: data.logoUrl || data.logo_url,
-                themeColor: data.themeColor || data.theme_color,
-                expiryDate: data.expiryDate || data.expiry_date,
-                studentLimit: data.studentLimit || data.student_limit,
+                adminEmail: data.admin_email,
+                logoUrl: data.logo_url,
+                themeColor: data.theme_color,
+                expiryDate: data.expiry_date,
+                studentLimit: data.student_limit,
                 tipe_lembaga: data.tipe_lembaga || 'KESETARAAN'
               };
               setSchool(mappedData);
             }
           } else {
-            console.warn('DEBUG [SchoolContext] No school found for custom domain:', customDomain);
             setError('Sekolah tidak ditemukan');
           }
         } catch (err) {
-          console.error('Custom domain resolution error:', err);
           setError('Gagal memproses domain');
         } finally {
           setLoading(false);
         }
       } else {
-        console.warn('DEBUG [SchoolContext] No slug or custom domain resolved');
         setLoading(false);
       }
     };
@@ -208,55 +184,40 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     const normalizedSlug = slug.toLowerCase();
     const hostname = window.location.hostname.toLowerCase().trim();
     
-    // Check master domain locally to avoid stale state issues
-    const isLocalMaster = hostname === 'rsch.my.id' || 
-                         hostname === 'www.rsch.my.id' || 
-                         hostname === 'pkbmarmillanusa.rsch.my.id' ||
-                         hostname.includes('localhost') || 
-                         hostname.includes('127.0.0.1') || 
-                         hostname.includes('ais-dev') || 
-                         hostname.includes('ais-pre') || 
-                         hostname.includes('run.app') ||
-                         hostname.includes('vercel.app');
-
     if (currentSchoolSlugRef.current === normalizedSlug) return;
     
     setLoading(true);
     setError(null);
     try {
-      // First try fetching by ID (which is the slug in this project based on original code)
-      let { data, error } = await supabase
+      // Strictly fetch by slug column (Mandat Mutlak Pak Ismanto - ANTI UUID ERROR)
+      let { data, error: fetchError } = await supabase
         .from('schools')
         .select('*')
-        .eq('id', normalizedSlug)
-        .single();
+        .eq('slug', normalizedSlug)
+        .maybeSingle();
       
-      if (error) {
-        // Fallback: try by slug
-        ({ data, error } = await supabase
-            .from('schools')
-            .select('*')
-            .eq('slug', normalizedSlug)
-            .single());
+      // Fallback to school_slug if slug is not found
+      if (!data && !fetchError) {
+        const { data: altData, error: altError } = await supabase
+          .from('schools')
+          .select('*')
+          .eq('school_slug', normalizedSlug)
+          .maybeSingle();
+        data = altData;
+        fetchError = altError;
       }
       
-      if (!error && data) {
-        console.log('DEBUG [SchoolContext] Found school data:', data);
-
-        // Verification check
-        console.log('DEBUG [SchoolContext] Checking registration for slug/id:', normalizedSlug);
-        const { data: registration, error: regError } = await supabase
+      if (!fetchError && data) {
+        const { data: registration } = await supabase
           .from('registrations')
           .select('status, school_name')
-          .eq('school_id', normalizedSlug)
+          .eq('slug', normalizedSlug)
           .maybeSingle();
 
-        console.log('DEBUG [SchoolContext] Registration lookup result:', registration, 'Error:', regError);
-        
-        const isVerified = (registration && registration.status === 'verified') || isLocalMaster || normalizedSlug === 'pkbmarmillanusa' || hostname.includes('pkbmarmillanusa');
+        const isMaster = hostname.includes('rsch.my.id') || hostname.includes('localhost') || hostname.includes('run.app') || hostname.includes('vercel.app');
+        const isVerified = (registration && registration.status === 'verified') || isMaster || normalizedSlug === 'pkbmarmillanusa';
         
         if (!isVerified) {
-          console.warn('DEBUG [SchoolContext] School blocked: Registration not found or invalid status for slug:', normalizedSlug);
           setIsBlocked(true);
           setError('403: Layanan Nonaktif');
           setSchool(null);
@@ -264,52 +225,40 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        // Reset blocked state if verified successfully
         setIsBlocked(false);
         
-        const schoolName = registration?.school_name;
-        
-        // BYPASS LOGIC: If status is undefined (column doesn't exist) or null, default to 'active'
         const rawStatus = data.status;
         const isActiveCol = data.is_active;
-        
-        console.log('DEBUG [SchoolContext] Raw status from DB:', rawStatus);
-
         const isStatusActive = rawStatus === undefined || rawStatus === null || 
                               rawStatus.toLowerCase() === 'active' || 
                               rawStatus === true || 
                               isActiveCol === true ||
-                              isActiveCol === undefined; // Bypass if column missing
+                              isActiveCol === undefined;
 
         if (!isStatusActive) {
-          console.warn('DEBUG [SchoolContext] School is explicitly INACTIVE. Status:', rawStatus);
           setError('Sekolah belum aktif atau belum diverifikasi');
           setSchool(null);
         } else {
-          console.log('DEBUG [SchoolContext] School is RESOLVED as ACTIVE (Bypass or Valid)');
-          // Map DB snake_case columns to camelCase interface
           const mappedData: School = {
             ...data,
-            id: data.id || data.slug, // Ensure we have an ID for updates
-            name: schoolName || data.name || data.nama || 'PKBM Armilla Nusa', // Use name from registration if available
+            id: data.id,
+            name: registration?.school_name || data.school_name || data.name || 'PKBM Armilla Nusa',
             accreditation: data.akreditasi || data.accreditation,
             address: data.alamat || data.address,
-            adminEmail: data.adminEmail || data.admin_email,
-            logoUrl: data.logoUrl || data.logo_url,
-            themeColor: data.themeColor || data.theme_color,
-            expiryDate: data.expiryDate || data.expiry_date,
-            studentLimit: data.studentLimit || data.student_limit,
+            adminEmail: data.admin_email,
+            logoUrl: data.logo_url,
+            themeColor: data.theme_color,
+            expiryDate: data.expiry_date,
+            studentLimit: data.student_limit,
             tipe_lembaga: data.tipe_lembaga || 'KESETARAAN'
           };
           setSchool(mappedData);
         }
       } else {
-        console.log('DEBUG: School NOT found or error:', error);
         setSchool(null);
         setError('Sekolah tidak ditemukan');
       }
     } catch (err) {
-      console.error('Fetch school error:', err);
       setError('Gagal memuat data sekolah');
     } finally {
       setLoading(false);
