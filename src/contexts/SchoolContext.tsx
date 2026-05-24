@@ -85,19 +85,28 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       let slug = '';
       let customDomainPath = hostname; // We'll try this as a fallback if slug fails
 
-      // Extract slug from rsch.my.id (e.g., sekolah.rsch.my.id -> slug: sekolah)
-      if (hostname.endsWith('.rsch.my.id')) {
+      // PRIORITY 1: Hardcode for armillanusa if detected in hostname (User Mandate)
+      if (hostname.includes('armillanusa')) {
+        slug = 'armillanusa';
+        console.log('DEBUG [SchoolContext] Priority slug assigned (ArmillaNusa detected):', slug);
+      } 
+      // PRIORITY 2: Default for Localhost for testing purposes
+      else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        slug = 'armillanusa';
+        console.log('DEBUG [SchoolContext] Localhost detected, defaulting to armillanusa');
+      }
+      // PRIORITY 3: Extract slug from platform domain (rsch.my.id)
+      else if (hostname.endsWith('.rsch.my.id')) {
         const platformSuffix = 'rsch.my.id';
         const slugPart = hostname.substring(0, hostname.length - platformSuffix.length - 1);
         if (slugPart) {
-          slug = slugPart.split('.')[0]; // Take the first part in case of multiple subdomains
+          slug = slugPart.split('.')[0]; 
           console.log('DEBUG [SchoolContext] Extracted slug from platform domain:', slug);
         }
-      } else if (hostname.includes('run.app') || hostname.includes('vercel.app')) {
-        const match = hostname.match(/pkbm[a-z0-9]+/i);
-        if (match) slug = match[0];
       }
 
+      // REMOVED: Fallback matching for 'pkbm' in run.app/vercel.app to avoid repo name collisions.
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user && !slug) {
         const { data: profile } = await supabase
