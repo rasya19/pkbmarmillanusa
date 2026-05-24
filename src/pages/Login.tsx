@@ -58,92 +58,22 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setErrorMsg('');
+    
+    // 1. AMBIL VALUE DATA FORM (Mandat Mutlak Pak Ismanto)
+    const dataForm = new FormData(e.currentTarget);
+    const emailUtama = dataForm.get('email')?.toString().trim();
+    const passwordUtama = dataForm.get('password')?.toString();
+    const nisnInput = dataForm.get('nisn')?.toString();
 
-    // Clear previous session data
-    const keysToInitialClear = ['userRole', 'adminName', 'teacherName', 'studentName', 'studentId', 'studentNisn', 'studentClass', 'isDemoMode', 'userEmail', 'teacherEmail'];
-    keysToInitialClear.forEach(k => localStorage.removeItem(k));
-
-    try {
-      // 1. AMBIL VALUE INPUT SECARA LANGSUNG (FormData Bawaan HTML - Mandat Pak Ismanto)
-      const dataForm = new FormData(e.currentTarget);
-      const emailUtama = dataForm.get('email')?.toString().trim();
-      const passwordUtama = dataForm.get('password')?.toString();
-      const nisnInput = dataForm.get('nisn')?.toString();
-
-      // 2. JALUR AUTH UTAMA (Admin & Guru)
-      if (emailUtama && passwordUtama) {
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: emailUtama,
-          password: passwordUtama,
-        });
-
-        if (authError) {
-          alert(authError.message);
-          return;
-        }
-
-        if (data.user) {
-          const userEmailLower = data.user.email?.toLowerCase().trim();
-          
-          // 3. OWNER BYPASS (IMMEDIATE & ABSOLUTE - SEBELUM CEK TABEL)
-          if (userEmailLower === 'pkbmarmillanusa@gmail.com' || userEmailLower === 'ismanto095@gmail.com') {
-            const bypassRole = userEmailLower === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
-            localStorage.setItem('userRole', bypassRole);
-            localStorage.setItem('userEmail', userEmailLower);
-            localStorage.setItem('adminName', bypassRole === 'SuperAdmin' ? 'Administrator' : 'Admin PKBM Armilla');
-            localStorage.removeItem('isDemoMode');
-            navigate('/admin-dashboard');
-            return;
-          }
-
-          localStorage.setItem('userEmail', data.user.email || '');
-          
-          // 4. Resolve Role for Regular Users (Cek Tabel Profiles)
-          let finalRole: string = 'Guru';
-          let profileName = 'User';
-          
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role, nama')
-            .eq('id', data.user.id)
-            .maybeSingle();
-
-          if (profile) {
-            finalRole = profile.role || 'Guru';
-            profileName = profile.nama || 'User';
-          } else {
-            const { data: guru } = await supabase
-              .from('profiles_guru')
-              .select('nama, email')
-              .eq('id', data.user.id)
-              .maybeSingle();
-            
-            if (guru) {
-              finalRole = 'Guru';
-              profileName = guru.nama;
-              localStorage.setItem('teacherEmail', guru.email || '');
-            } else {
-              finalRole = data.user.user_metadata?.role || 'Guru';
-              profileName = data.user.user_metadata?.name || 'User';
-            }
-          }
-
-          localStorage.setItem('userRole', finalRole);
-          if (finalRole === 'Admin' || finalRole === 'SuperAdmin') {
-            localStorage.setItem('adminName', profileName);
-          } else if (finalRole === 'Guru') {
-            localStorage.setItem('teacherName', profileName);
-          }
-
-          localStorage.removeItem('isDemoMode');
-          navigate('/dashboard');
-          return;
-        }
+    // Jalur Siswa (NISN)
+    if (loginRole === 'Siswa') {
+      if (!nisnInput) {
+        alert("NISN tidak boleh kosong!");
+        setIsLoading(false);
+        return;
       }
 
-      // 5. JALUR NISN SISWA (Siswa Tanpa Email)
-      if (nisnInput) {
+      try {
         const { data: sData, error: sError } = await supabase
           .from('profiles_siswa')
           .select('*')
@@ -152,11 +82,13 @@ export default function Login() {
 
         if (sError || !sData) {
           alert('NISN tidak ditemukan.');
+          setIsLoading(false);
           return;
         }
 
         if (sData.is_online) {
           alert('Akun sedang aktif di perangkat lain.');
+          setIsLoading(false);
           return;
         }
 
@@ -167,17 +99,76 @@ export default function Login() {
         localStorage.setItem('studentNisn', sData.nisn);
         localStorage.setItem('studentClass', sData.class);
         navigate('/dashboard');
+      } catch (err: any) {
+        alert(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Jalur Admin/Guru (Email)
+    if (!emailUtama || !passwordUtama) {
+      alert("Email atau password tidak boleh kosong!");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: emailUtama, 
+        password: passwordUtama 
+      });
+
+      if (error) {
+        alert(error.message);
+        setIsLoading(false);
         return;
       }
 
-      alert('Email atau password tidak boleh kosong!');
+      // Bypass Khusus Owner (Mandat Pak Ismanto)
+      const userEmailLower = emailUtama.toLowerCase();
+      if (userEmailLower === 'pkbmarmillanusa@gmail.com' || userEmailLower === 'ismanto095@gmail.com') {
+        const bypassRole = userEmailLower === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+        localStorage.setItem('userRole', bypassRole);
+        localStorage.setItem('userEmail', userEmailLower);
+        localStorage.setItem('adminName', bypassRole === 'SuperAdmin' ? 'Administrator' : 'Admin PKBM Armilla');
+        navigate('/admin-dashboard');
+        return;
+      }
 
+      // Login Normal Guru/Admin
+      if (data.user) {
+        localStorage.setItem('userEmail', data.user.email || '');
+        const { data: profile } = await supabase.from('profiles').select('role, nama').eq('id', data.user.id).maybeSingle();
+        
+        let finalRole = profile?.role || 'Guru';
+        let profileName = profile?.nama || 'User';
+
+        if (!profile) {
+          const { data: guru } = await supabase.from('profiles_guru').select('nama, email').eq('id', data.user.id).maybeSingle();
+          if (guru) {
+            finalRole = 'Guru';
+            profileName = guru.nama;
+            localStorage.setItem('teacherEmail', guru.email || '');
+          }
+        }
+
+        localStorage.setItem('userRole', finalRole);
+        if (finalRole === 'Admin' || finalRole === 'SuperAdmin') {
+          localStorage.setItem('adminName', profileName);
+        } else {
+          localStorage.setItem('teacherName', profileName);
+        }
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       alert(error.message);
     } finally {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-slate-900 font-sans flex flex-col items-center justify-center p-6 text-slate-200">
