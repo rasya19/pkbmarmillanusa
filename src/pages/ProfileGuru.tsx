@@ -86,21 +86,29 @@ export default function ProfileGuru() {
   const handleUpdateBiodata = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingBiodata(true);
+    
     try {
-      // 1. Verify and Refresh Session
+      // 1. AMBIL SESI FRESH DI DALAM FUNGSI KLIK
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) throw new Error('Sesi kedaluwarsa. Silakan login kembali.');
+      
+      // 2. CEK JIKA SESI KOSONG/EXPIRED - PAKSA REFRESH
+      if (!session || sessionError) {
+        console.log('DEBUG [Auth] Session missing, attempting refresh...');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshData.session) {
+          throw new Error('Sesi Anda telah berakhir. Silakan login kembali.');
+        }
       }
 
+      // Re-verify from the fresh session
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Sesi tidak valid');
 
       const currentRole = localStorage.getItem('userRole') || 'Guru';
       const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
 
-      const updateData: any = {
+      // 3. MAPPING KOLOM DATABASE SESUAI STRATEGI PAK ISMANTO
+      const updateData = {
         nama: biodata.nama,
         nip: biodata.nip,
         email: biodata.email,
@@ -109,15 +117,22 @@ export default function ProfileGuru() {
         alamat: biodata.alamat
       };
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from(table)
         .update(updateData)
         .eq('id', user.id);
 
-      if (error) throw error;
-      toast.success('Biodata berhasil diperbarui');
+      if (updateError) {
+        console.error("Detail Error Supabase:", updateError);
+        throw new Error(updateError.message);
+      }
+
+      toast.success('Biodata Berhasil Disimpan Permanen!');
+      if (currentRole === 'Guru') localStorage.setItem('teacherName', biodata.nama);
+      
     } catch (err: any) {
-      toast.error('Gagal memperbarui biodata: ' + err.message);
+      console.error('DEBUG [Profile] Save failed:', err);
+      toast.error('Gagal menyimpan: ' + err.message);
     } finally {
       setSavingBiodata(false);
     }
@@ -144,23 +159,20 @@ export default function ProfileGuru() {
 
     setSavingPassword(true);
     try {
-      // 1. Verify and Refresh Session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      // 1. Verify and Refresh Session Real-time
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !sessionData.session) {
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          toast.error('Sesi Habis: Silakan login ulang.');
-          return;
+      if (sessionError || !session) {
+        console.log('DEBUG [Auth] Session invalid, refreshing...');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshData.session) {
+          throw new Error('Sesi Habis: Silakan login ulang.');
         }
       }
 
       // 2. Auth update with latest user identity
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Sesi Habis: Silakan login ulang.');
-        return;
-      }
+      if (!user) throw new Error('Pengguna tidak terdeteksi');
 
       const { error: authError } = await supabase.auth.updateUser({
         password: passwordState.newPassword
@@ -189,6 +201,7 @@ export default function ProfileGuru() {
       }, 2000);
       
     } catch (err: any) {
+      console.error('DEBUG [Profile] Password Update Error:', err);
       toast.error('Gagal Ganti Password: ' + err.message);
     } finally {
       setSavingPassword(false);
