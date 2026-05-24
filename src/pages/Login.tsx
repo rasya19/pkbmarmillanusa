@@ -104,6 +104,7 @@ export default function Login() {
         });
 
         if (signInError) {
+          console.error("Detail Error Auth:", signInError);
           // If auth user account does not exist in Auth schema yet, provision/signUp them dynamically
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: virtualEmail,
@@ -117,6 +118,7 @@ export default function Login() {
           });
 
           if (signUpError) {
+            console.error("Detail Error Auth:", signUpError);
             throw new Error(`Gagal mendaftarkan akun sistem Siswa: ${signUpError.message}`);
           }
 
@@ -126,6 +128,7 @@ export default function Login() {
           });
 
           if (reSignInError) {
+            console.error("Detail Error Auth:", reSignInError);
             throw new Error(`Gagal login setelah registrasi Siswa: ${reSignInError.message}`);
           }
           authUser = reSignInData.user;
@@ -149,6 +152,7 @@ export default function Login() {
         
         navigate('/dashboard');
       } catch (err: any) {
+        console.error("Detail Error Auth:", err);
         alert(err.message);
       } finally {
         setIsLoading(false);
@@ -186,6 +190,7 @@ export default function Login() {
             let authUser = authData?.user;
 
             if (signInError) {
+              console.error("Detail Error Auth:", signInError);
               // Jika Guru belum terdaftar di Supabase Auth, daftarkan secara otomatis demi full Read-Write session
               const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
                 email: emailLower,
@@ -197,14 +202,18 @@ export default function Login() {
                 }
               });
 
-              if (signUpError) console.error('Auto Guru Signup error:', signUpError);
+              if (signUpError) {
+                console.error("Detail Error Auth:", signUpError);
+              }
 
               const { data: reSignInData, error: reSignInError } = await supabase.auth.signInWithPassword({
                 email: emailLower,
                 password: passwordUtama
               });
 
-              if (!reSignInError) {
+              if (reSignInError) {
+                console.error("Detail Error Auth:", reSignInError);
+              } else {
                 authUser = reSignInData.user;
               }
             }
@@ -236,6 +245,7 @@ export default function Login() {
             let authUser = authData?.user;
 
             if (signInError) {
+              console.error("Detail Error Auth:", signInError);
               // Jika Akun Admin belum terdaftar di Supabase Auth, daftarkan secara otomatis demi full Read-Write session
               const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
                 email: emailLower,
@@ -247,14 +257,18 @@ export default function Login() {
                 }
               });
 
-              if (signUpError) console.error('Auto Admin Signup error:', signUpError);
+              if (signUpError) {
+                console.error("Detail Error Auth:", signUpError);
+              }
 
               const { data: reSignInData, error: reSignInError } = await supabase.auth.signInWithPassword({
                 email: emailLower,
                 password: passwordUtama
               });
 
-              if (!reSignInError) {
+              if (reSignInError) {
+                console.error("Detail Error Auth:", reSignInError);
+              } else {
                 authUser = reSignInData.user;
               }
             }
@@ -274,21 +288,37 @@ export default function Login() {
       });
 
       if (error) {
+        console.error("Detail Error Auth:", error);
+        
         // Fallback Khusus Owner untuk akun admin master jika belum terdaftar sama sekali
         if (emailLower === 'pkbmarmillanusa@gmail.com' || emailLower === 'ismanto095@gmail.com') {
           const bypassRole = emailLower === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
           
           // Cobalah untuk mendaftarkannya terlebih dahulu agar memiliki auth session nyata
-          const { data: masterSignUp } = await supabase.auth.signUp({
+          const { data: masterSignUp, error: masterSignUpErr } = await supabase.auth.signUp({
             email: emailLower,
             password: passwordUtama,
             options: { data: { role: bypassRole } }
-          }).catch(() => ({ data: null }));
+          }).catch((err) => {
+            console.error("Detail Error Auth:", err);
+            return { data: null, error: err };
+          });
 
-          const { data: masterAuth } = await supabase.auth.signInWithPassword({
+          if (masterSignUpErr) {
+            console.error("Detail Error Auth:", masterSignUpErr);
+          }
+
+          const { data: masterAuth, error: masterAuthErr } = await supabase.auth.signInWithPassword({
             email: emailLower,
             password: passwordUtama
-          }).catch(() => ({ data: null }));
+          }).catch((err) => {
+            console.error("Detail Error Auth:", err);
+            return { data: null, error: err };
+          });
+
+          if (masterAuthErr) {
+            console.error("Detail Error Auth:", masterAuthErr);
+          }
 
           if (masterAuth?.user) {
             localStorage.setItem('userEmail', emailLower);
@@ -340,6 +370,7 @@ export default function Login() {
         navigate('/dashboard');
       }
     } catch (error: any) {
+      console.error("Detail Error Auth:", error);
       alert(error.message);
     } finally {
       setIsLoading(false);
