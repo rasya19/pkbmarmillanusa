@@ -86,30 +86,43 @@ export default function MasterAdminDashboard() {
   }
 
   const fetchData = async () => {
+    console.log('DEBUG [MasterAdmin] Starting fetch for tab:', activeTab);
     setIsLoading(true);
     try {
-      if (activeTab === 'Registrasi Sekolah') {
-        const { data, error } = await supabase
-          .from('registrations')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        setRegistrations(data || []);
+      // 1. Always fetch registrations to keep stats accurate
+      const { data: regData, error: regError } = await supabase
+        .from('registrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (regError) {
+        console.error('DEBUG [MasterAdmin] Registrations Fetch Error:', regError);
+        toast.error('Gagal mengambil data pendaftaran.');
       } else {
-        const { data, error } = await supabase
+        console.log('DEBUG [MasterAdmin] Registrations Fetched:', regData?.length || 0);
+        setRegistrations(regData || []);
+      }
+
+      // 2. Fetch PPDB if needed
+      if (activeTab === 'PPDB Global') {
+        const { data: ppdbData, error: ppdbError } = await supabase
           .from('ppdb_registrations')
           .select('*')
           .order('created_at', { ascending: false });
         
-        if (error) throw error;
-        setStudentRegistrations(data || []);
+        if (ppdbError) {
+          console.error('DEBUG [MasterAdmin] PPDB Fetch Error:', ppdbError);
+        } else {
+          setStudentRegistrations(ppdbData || []);
+        }
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Gagal mengambil data.');
+      console.error('DEBUG [MasterAdmin] Unexpected Error:', error);
+      toast.error('Terjadi kesalahan saat memuat data.');
     } finally {
+      // MANDAT MUTLAK: Matikan Loading State!
       setIsLoading(false);
+      console.log('DEBUG [MasterAdmin] Loading State Deactivated');
     }
   };
 
@@ -248,10 +261,12 @@ export default function MasterAdminDashboard() {
     }
   };
 
-  const filteredRegistrations = registrations.filter(r => 
-    r.school_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.npsn.includes(searchTerm)
-  );
+  const filteredRegistrations = registrations.filter(r => {
+    const sName = (r.school_name || r.name || '').toLowerCase();
+    const sNpsn = (r.npsn || '').toLowerCase();
+    const search = searchTerm.toLowerCase();
+    return sName.includes(search) || sNpsn.includes(search);
+  });
 
   const filteredStudents = studentRegistrations.filter(r => 
     r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -354,11 +369,11 @@ export default function MasterAdminDashboard() {
                       <td className="py-6">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-slate-100 rounded-[1rem] flex items-center justify-center font-black text-brand-sidebar italic text-xl group-hover:bg-brand-accent group-hover:text-white transition-all">
-                            {r.school_name[0]}
+                            {(r.school_name || r.name || 'S')[0]}
                           </div>
                           <div>
-                            <p className="text-xs font-black text-brand-sidebar italic uppercase tracking-tight">{r.school_name}</p>
-                            <p className="text-[10px] font-bold text-slate-400">NPSN: {r.npsn}</p>
+                            <p className="text-xs font-black text-brand-sidebar italic uppercase tracking-tight">{r.school_name || r.name || 'Sekolah Tanpa Nama'}</p>
+                            <p className="text-[10px] font-bold text-slate-400">NPSN: {r.npsn || '-'}</p>
                           </div>
                         </div>
                       </td>
