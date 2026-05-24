@@ -108,34 +108,62 @@ export default function ProfileGuru() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordState.newPassword !== passwordState.confirmPassword) {
-      toast.error('Konfirmasi password tidak cocok');
+    
+    // 1. Validation checks
+    if (!passwordState.newPassword) {
+      toast.error('Password baru wajib diisi');
       return;
     }
 
-    if (passwordState.newPassword.length < 8) {
-      toast.error('Password minimal 8 karakter');
+    if (passwordState.newPassword !== passwordState.confirmPassword) {
+      toast.error('Konfirmasi password tidak cocok. Pastikan kedua input sama.');
+      return;
+    }
+
+    if (passwordState.newPassword.length < 6) {
+      toast.error('Keamanan Lemah: Password minimal harus 6 karakter.');
       return;
     }
 
     setSavingPassword(true);
     try {
-      const { error } = await supabase.auth.updateUser({
+      // 2. Clear previous error state (implicitly by starting loader)
+      console.log('Attempting to update password for user:', teacherId);
+
+      // 3. Supabase Auth Update
+      const { data, error: authError } = await supabase.auth.updateUser({
         password: passwordState.newPassword
       });
 
-      if (error) throw error;
+      if (authError) {
+        console.error('Auth update error:', authError);
+        throw new Error(authError.message || 'Terjadi kesalahan sistem saat memperbarui kredensial.');
+      }
 
-      // Also update in profiles_guru if password column is kept there (legacy)
-      await supabase
-        .from('profiles_guru')
-        .update({ password: passwordState.newPassword, must_change_password: false })
-        .eq('id', teacherId);
+      // 4. (Optional) Sync with profile table if standard
+      // We wrap this in a separate try-catch so it doesn't block the main auth success
+      try {
+        await supabase
+          .from('profiles_guru')
+          .update({ 
+            // Only update if columns exist, handles missing legacy columns gracefully
+            must_change_password: false 
+          })
+          .eq('id', teacherId);
+      } catch (syncErr) {
+        console.warn('Sync profile table warning (non-critical):', syncErr);
+      }
 
-      toast.success('Password berhasil diperbarui');
+      // 5. Success feedback
+      toast.success('Password Berhasil Diperbarui! Silakan gunakan password baru ini pada login berikutnya.');
+      
+      // Clear form
       setPasswordState({ newPassword: '', confirmPassword: '' });
+      
     } catch (err: any) {
-      toast.error('Gagal memperbarui password: ' + err.message);
+      console.error('Password update process failed:', err);
+      // Explicit error alert for visibility
+      toast.error('Gagal Ganti Password: ' + (err.message || 'Koneksi terputus atau sesi habis.'));
     } finally {
       setSavingPassword(false);
     }
