@@ -83,7 +83,7 @@ export default function ProfileGuru() {
     }
   };
 
-  const handleUpdateBiodata = async (e: React.FormEvent) => {
+  const handleUpdateBiodata = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSavingBiodata(true);
     
@@ -107,14 +107,15 @@ export default function ProfileGuru() {
       const currentRole = localStorage.getItem('userRole') || 'Guru';
       const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
 
-      // 3. MAPPING KOLOM DATABASE SESUAI STRATEGI PAK ISMANTO
+      // 3. READ NATIVE FORM DATA (MAPPING KOLOM DATABASE PAK ISMANTO)
+      const form = new FormData(e.currentTarget);
       const updateData = {
-        nama: biodata.nama,
-        nip: biodata.nip,
-        email: biodata.email,
-        whatsapp: biodata.phone,
-        phone: biodata.phone,
-        alamat: biodata.alamat
+        nama: form.get('nama')?.toString() || biodata.nama,
+        nip: form.get('nip')?.toString() || biodata.nip,
+        email: form.get('email')?.toString() || biodata.email,
+        whatsapp: form.get('whatsapp')?.toString() || biodata.phone,
+        phone: form.get('whatsapp')?.toString() || biodata.phone,
+        alamat: form.get('alamat')?.toString() || biodata.alamat
       };
 
       const { error: updateError } = await supabase
@@ -128,8 +129,17 @@ export default function ProfileGuru() {
       }
 
       toast.success('Biodata Berhasil Disimpan Permanen!');
-      if (currentRole === 'Guru') localStorage.setItem('teacherName', biodata.nama);
+      if (currentRole === 'Guru') localStorage.setItem('teacherName', updateData.nama);
       
+      // Sync local state
+      setBiodata({
+        nama: updateData.nama,
+        nip: updateData.nip,
+        email: updateData.email,
+        phone: updateData.phone,
+        alamat: updateData.alamat
+      });
+
     } catch (err: any) {
       console.error('DEBUG [Profile] Save failed:', err);
       toast.error('Gagal menyimpan: ' + err.message);
@@ -289,6 +299,7 @@ export default function ProfileGuru() {
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nama Lengkap</label>
                   <input 
+                    name="nama"
                     type="text" 
                     value={biodata.nama}
                     onChange={(e) => setBiodata({...biodata, nama: e.target.value})}
@@ -299,6 +310,7 @@ export default function ProfileGuru() {
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">ID / NIP</label>
                   <input 
+                    name="nip"
                     type="text" 
                     value={biodata.nip}
                     onChange={(e) => setBiodata({...biodata, nip: e.target.value})}
@@ -309,6 +321,7 @@ export default function ProfileGuru() {
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Aktif</label>
                   <input 
+                    name="email"
                     type="email" 
                     value={biodata.email}
                     onChange={(e) => setBiodata({...biodata, email: e.target.value})}
@@ -319,6 +332,7 @@ export default function ProfileGuru() {
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nomor WhatsApp</label>
                   <input 
+                    name="whatsapp"
                     type="text" 
                     value={biodata.phone}
                     onChange={(e) => setBiodata({...biodata, phone: e.target.value})}
@@ -332,6 +346,7 @@ export default function ProfileGuru() {
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Alamat Tinggal</label>
                 <textarea 
+                  name="alamat"
                   value={biodata.alamat}
                   onChange={(e) => setBiodata({...biodata, alamat: e.target.value})}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all h-24 resize-none"

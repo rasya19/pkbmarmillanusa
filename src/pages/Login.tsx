@@ -55,38 +55,39 @@ export default function Login() {
     }
   }, [navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
 
     // Clear previous session data
-    const keysToInitialClear = ['userRole', 'adminName', 'teacherName', 'studentName', 'studentId', 'studentNisn', 'studentClass', 'isDemoMode'];
+    const keysToInitialClear = ['userRole', 'adminName', 'teacherName', 'studentName', 'studentId', 'studentNisn', 'studentClass', 'isDemoMode', 'userEmail', 'teacherEmail'];
     keysToInitialClear.forEach(k => localStorage.removeItem(k));
 
     try {
-      // 1. UNIVERSAL AUTH (PRIORITY)
-      if (formData.email && formData.password) {
+      // 1. AMBIL VALUE INPUT SECARA LANGSUNG (Menggunakan FormData Bawaan HTML)
+      const form = new FormData(e.currentTarget);
+      const emailInput = form.get('email')?.toString().trim();
+      const passwordInput = form.get('password')?.toString();
+      const nisnInput = form.get('nisn')?.toString();
+
+      // 2. JALUR AUTH UTAMA (Admin & Guru)
+      if (emailInput && passwordInput) {
         const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: formData.email.trim(),
-          password: formData.password,
+          email: emailInput,
+          password: passwordInput,
         });
 
-        if (authError) {
-          // Use original message from server as requested
-          throw authError;
-        }
+        if (authError) throw authError;
 
         if (data.user) {
-          console.log('DEBUG [Auth] Success! User ID:', data.user.id);
           const userEmailLower = data.user.email?.toLowerCase().trim();
           
-          // 2. OWNER BYPASS (IMMEDIATE & ABSOLUTE - BARIS PALING ATAS SETELAH LOGIN)
+          // 3. OWNER BYPASS (IMMEDIATE & ABSOLUTE - SEBELUM CEK TABEL)
           if (userEmailLower === 'pkbmarmillanusa@gmail.com' || userEmailLower === 'ismanto095@gmail.com') {
-            console.log('DEBUG [Auth] Owner Bypass Triggered:', userEmailLower);
             const bypassRole = userEmailLower === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
             localStorage.setItem('userRole', bypassRole);
-            localStorage.setItem('userEmail', userEmailLower || '');
+            localStorage.setItem('userEmail', userEmailLower);
             localStorage.setItem('adminName', bypassRole === 'SuperAdmin' ? 'Administrator' : 'Admin PKBM Armilla');
             localStorage.removeItem('isDemoMode');
             navigate('/dashboard');
@@ -95,10 +96,10 @@ export default function Login() {
 
           localStorage.setItem('userEmail', data.user.email || '');
           
-          // 3. Resolve Role for Regular Users (Simple & Universal)
+          // 4. Resolve Role for Regular Users (Cek Tabel Profiles)
           let finalRole: string = 'Guru';
           let profileName = 'User';
-          // Check profiles table for role
+          
           const { data: profile } = await supabase
             .from('profiles')
             .select('role, nama')
@@ -108,21 +109,17 @@ export default function Login() {
           if (profile) {
             finalRole = profile.role || 'Guru';
             profileName = profile.nama || 'User';
-            if (profile.role === 'Admin' || profile.role === 'SuperAdmin') {
-              localStorage.setItem('adminName', profileName);
-            }
           } else {
-            // Try Guru Profile
             const { data: guru } = await supabase
               .from('profiles_guru')
-              .select('nama')
+              .select('nama, email')
               .eq('id', data.user.id)
               .maybeSingle();
             
             if (guru) {
               finalRole = 'Guru';
               profileName = guru.nama;
-              localStorage.setItem('teacherName', profileName);
+              localStorage.setItem('teacherEmail', guru.email || '');
             } else {
               finalRole = data.user.user_metadata?.role || 'Guru';
               profileName = data.user.user_metadata?.name || 'User';
@@ -142,12 +139,12 @@ export default function Login() {
         }
       }
 
-      // 3. Fallback for Student (NISN) if email is empty
-      if (formData.nisn) {
+      // 5. JALUR NISN SISWA (Siswa Tanpa Email)
+      if (nisnInput) {
         const { data: sData, error: sError } = await supabase
           .from('profiles_siswa')
           .select('*')
-          .eq('nisn', formData.nisn)
+          .eq('nisn', nisnInput.trim())
           .single();
 
         if (sError || !sData) throw new Error('NISN tidak ditemukan.');
@@ -157,16 +154,16 @@ export default function Login() {
         localStorage.setItem('userRole', 'Siswa');
         localStorage.setItem('studentName', sData.nama);
         localStorage.setItem('studentId', sData.id);
+        localStorage.setItem('studentNisn', sData.nisn);
         localStorage.setItem('studentClass', sData.class);
         navigate('/dashboard');
         return;
       }
 
-      throw new Error('Silakan sertakan Email/Password atau NISN.');
+      throw new Error('Masukkan Email/Password atau NISN yang valid.');
 
     } catch (error: any) {
-      console.error('DEBUG [Auth] Error:', error.message);
-      setErrorMsg(error.message); // Showing direct error message as requested
+      setErrorMsg(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -279,23 +276,22 @@ export default function Login() {
             )}
 
             <form onSubmit={handleLogin} className="space-y-5">
-              {loginRole !== 'Siswa' ? (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
-                      Email Akun {loginRole}
-                    </label>
+              {/* Email/Password Fields (Always in DOM for Autofill stability) */}
+              <div className={cn("space-y-5", loginRole === 'Siswa' ? "hidden" : "block")}>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
+                    Email Akun
+                  </label>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
                         <Mail className="w-4 h-4" />
                       </div>
                       <input 
-                        type="text" 
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                          name="email"
+                          type="text" 
+                          autoComplete="username email"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
                         placeholder="nama@email.com"
-                        className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
                       />
                     </div>
                   </div>
@@ -307,24 +303,25 @@ export default function Login() {
                         <Lock className="w-4 h-4" />
                       </div>
                       <input 
-                        type={showPassword ? "text" : "password"} 
-                        required
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                          name="password"
+                          type={showPassword ? "text" : "password"} 
+                          autoComplete="current-password"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-12 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
                         placeholder="••••••••"
-                        className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-12 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
                       />
-                      <button 
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-400 transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-400 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
-                </>
-              ) : (
+                </div>
+              </div>
+
+              {/* NISN Field */}
+              <div className={cn("space-y-5", loginRole !== 'Siswa' ? "hidden" : "block")}>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
                     Nomor NISN Siswa
@@ -334,8 +331,8 @@ export default function Login() {
                       <ShieldCheck className="w-4 h-4" />
                     </div>
                     <input 
+                      name="nisn"
                       type="text" 
-                      required
                       value={formData.nisn}
                       onChange={(e) => setFormData({...formData, nisn: e.target.value})}
                       placeholder="Masukkan 10 digit NISN Anda"
@@ -343,7 +340,7 @@ export default function Login() {
                     />
                   </div>
                 </div>
-              )}
+              </div>
 
               <div className="flex justify-end pt-2">
                 <button 
