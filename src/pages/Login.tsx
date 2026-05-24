@@ -79,50 +79,53 @@ export default function Login() {
 
         if (data.user) {
           console.log('DEBUG [Auth] Success! User ID:', data.user.id);
+          const userEmailLower = data.user.email?.toLowerCase().trim();
+          
+          // 2. OWNER BYPASS (IMMEDIATE & ABSOLUTE - BARIS PALING ATAS SETELAH LOGIN)
+          if (userEmailLower === 'pkbmarmillanusa@gmail.com' || userEmailLower === 'ismanto095@gmail.com') {
+            console.log('DEBUG [Auth] Owner Bypass Triggered:', userEmailLower);
+            const bypassRole = userEmailLower === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+            localStorage.setItem('userRole', bypassRole);
+            localStorage.setItem('userEmail', userEmailLower || '');
+            localStorage.setItem('adminName', bypassRole === 'SuperAdmin' ? 'Administrator' : 'Admin PKBM Armilla');
+            localStorage.removeItem('isDemoMode');
+            navigate('/dashboard');
+            return;
+          }
+
           localStorage.setItem('userEmail', data.user.email || '');
           
-          // 2. Resolve Role (Simple & Universal)
+          // 3. Resolve Role for Regular Users (Simple & Universal)
           let finalRole: string = 'Guru';
           let profileName = 'User';
+          // Check profiles table for role
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, nama')
+            .eq('id', data.user.id)
+            .maybeSingle();
 
-          // Principal Email Bypass (Hardcoded Security)
-          const userEmailLower = data.user.email?.toLowerCase().trim();
-          if (userEmailLower === 'ismanto095@gmail.com') {
-            finalRole = 'SuperAdmin';
-            profileName = 'Administrator';
-          } else if (userEmailLower === 'pkbmarmillanusa@gmail.com' || userEmailLower === 'armillanusa@gmail.com') {
-            finalRole = 'Admin';
-            profileName = 'Admin PKBM Armilla';
+          if (profile) {
+            finalRole = profile.role || 'Guru';
+            profileName = profile.nama || 'User';
+            if (profile.role === 'Admin' || profile.role === 'SuperAdmin') {
+              localStorage.setItem('adminName', profileName);
+            }
           } else {
-            // Check profiles table for role
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('role, nama')
+            // Try Guru Profile
+            const { data: guru } = await supabase
+              .from('profiles_guru')
+              .select('nama')
               .eq('id', data.user.id)
               .maybeSingle();
-
-            if (profile) {
-              finalRole = profile.role || 'Guru';
-              profileName = profile.nama || 'User';
-              if (profile.role === 'Admin' || profile.role === 'SuperAdmin') {
-                localStorage.setItem('adminName', profileName);
-              }
+            
+            if (guru) {
+              finalRole = 'Guru';
+              profileName = guru.nama;
+              localStorage.setItem('teacherName', profileName);
             } else {
-              // Try Guru Profile
-              const { data: guru } = await supabase
-                .from('profiles_guru')
-                .select('nama')
-                .eq('id', data.user.id)
-                .maybeSingle();
-              
-              if (guru) {
-                finalRole = 'Guru';
-                profileName = guru.nama;
-                localStorage.setItem('teacherName', profileName);
-              } else {
-                finalRole = data.user.user_metadata?.role || 'Guru';
-                profileName = data.user.user_metadata?.name || 'User';
-              }
+              finalRole = data.user.user_metadata?.role || 'Guru';
+              profileName = data.user.user_metadata?.name || 'User';
             }
           }
 
