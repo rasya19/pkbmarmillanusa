@@ -87,7 +87,6 @@ export default function PPDBRegistration() {
           school_id: schoolId,
           school_name: schoolName,
           status: 'PENDING',
-          is_approved: false,
           created_at: new Date().toISOString()
         }
       ]);

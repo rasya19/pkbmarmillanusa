@@ -162,10 +162,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
               const { data: registration } = await supabase
                 .from('registrations')
                 .select('status, school_name')
-                .eq('slug', data.slug)
+                .eq('subdomain', data.slug)
                 .maybeSingle();
               
-              const isVerified = (registration && registration.status === 'verified') || isMaster || hostname.includes('armillanusa');
+              const isVerified = (registration && registration.status === 'approved') || isMaster || hostname.includes('armillanusa');
 
               if (!isVerified) {
                 setIsBlocked(true);

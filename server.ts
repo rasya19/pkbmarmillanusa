@@ -94,10 +94,10 @@ async function startServer() {
         return res.status(500).json({ success: false, message: "SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi." });
       }
 
-      // 1. Ambil data slug
+      // 1. Ambil data subdomain
       const { data: registration } = await supabaseAdmin
         .from('registrations')
-        .select('slug, school_name')
+        .select('subdomain, school_name')
         .eq('id', id)
         .single();
       
@@ -105,7 +105,7 @@ async function startServer() {
         return res.status(404).json({ success: false, message: "Data tidak ditemukan." });
       }
 
-      const domainName = `${registration.slug || registration.school_name.toLowerCase().replace(/ /g, '-')}.rsch.my.id`;
+      const domainName = `${registration.subdomain || registration.school_name.toLowerCase().replace(/ /g, '-')}.rsch.my.id`;
 
       // 2. Hapus Supabase
       await supabaseAdmin.from('registrations').delete().eq('id', id);

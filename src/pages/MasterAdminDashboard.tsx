@@ -14,14 +14,10 @@ import { format } from 'date-fns';
 interface Registration {
   id: string;
   school_name: string;
-  npsn: string;
-  admin_name: string;
-  admin_email: string;
   whatsapp: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
-  slug?: string;
-  subscription_plan?: 'Silver' | 'Gold' | 'Platinum';
+  subdomain?: string;
 }
 
 export default function MasterAdminDashboard() {
@@ -117,8 +113,8 @@ export default function MasterAdminDashboard() {
     console.log('DEBUG [Approval] Initiating for:', reg);
     if (!window.confirm(`Setujui pendaftaran ${reg.school_name}?`)) return;
     
-    // 1. Slug generation (needs to happen first so we can save it)
-    let slugVal = (reg.slug || reg.school_name.toLowerCase().trim()
+    // 1. Subdomain generation
+    let slugVal = (reg.subdomain || reg.school_name.toLowerCase().trim()
       .replace(/[^\w\s-]/g, '') 
       .replace(/\s+/g, '-')     
       .replace(/-+/g, '-')).toLowerCase();
@@ -129,12 +125,12 @@ export default function MasterAdminDashboard() {
 
     setProcessingId(reg.id);
     try {
-      // 2. Update registration status and slug
+      // 2. Update registration status and subdomain
       const { error: updateError } = await supabase
         .from('registrations')
         .update({ 
           status: 'approved',
-          slug: slugVal 
+          subdomain: slugVal 
         })
         .eq('id', reg.id);
       
@@ -143,15 +139,13 @@ export default function MasterAdminDashboard() {
         throw new Error(`Gagal update status: ${updateError.message}`);
       }
 
-      console.log('DEBUG [Approval] Slug generated:', slugVal);
+      console.log('DEBUG [Approval] Subdomain generated:', slugVal);
 
       // 3. Upsert into schools table
       const schoolData = {
         name: reg.school_name,
         slug: slugVal,
-        npsn: reg.npsn,
         is_active: true,
-        subscription_plan: reg.subscription_plan || 'Silver',
         whatsapp: reg.whatsapp
       };
 
@@ -171,50 +165,7 @@ export default function MasterAdminDashboard() {
         }
       }
 
-      // 4. Create/Update User Profile for the School Admin
-      // This ensures the admin user is associated with their new school
-      if (reg.admin_email) {
-        console.log('DEBUG [Approval] Creating/Updating User Profile for:', reg.admin_email);
-        
-        // Search if profile already exists
-        const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', reg.admin_email.toLowerCase().trim())
-            .single();
-
-        if (existingProfile) {
-            // Update existing profile with new school_id and role Admin
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .update({ 
-                    school_id: slugVal,
-                    role: 'Admin',
-                    nama: reg.admin_name,
-                    subscription_plan: reg.subscription_plan || 'Silver',
-                    is_approved: true
-                })
-                .eq('id', existingProfile.id);
-            
-            if (profileError) console.error('DEBUG [Approval] Profile Update Error:', profileError);
-        } else {
-            // Create new profile record (auth will be handled by Supabase Auth if they sign up/login)
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert([{
-                    email: reg.admin_email.toLowerCase().trim(),
-                    nama: reg.admin_name,
-                    role: 'Admin',
-                    school_id: slugVal,
-                    subscription_plan: reg.subscription_plan || 'Silver',
-                    is_approved: true
-                }]);
-            
-            if (profileError) console.error('DEBUG [Approval] Profile Insert Error:', profileError);
-        }
-      }
-
-      toast.success(`${reg.school_name} berhasil diaktifkan!`);
+      toast.success(`${reg.school_name} berhasil diaktifkan dengan subdomain: ${slugVal}`);
       fetchData();
     } catch (error: any) {
       console.error('DEBUG [Approval] Fatal Error:', error);
@@ -245,8 +196,7 @@ export default function MasterAdminDashboard() {
   };
 
   const filteredRegistrations = registrations.filter(r => 
-    r.school_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.npsn.includes(searchTerm)
+    r.school_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredStudents = studentRegistrations.filter(r => 
@@ -334,11 +284,10 @@ export default function MasterAdminDashboard() {
               <thead>
                 <tr className="text-left border-b border-slate-100">
                   <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Institusi Sekolah</th>
-                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Admin Penghubung</th>
-                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Kontak</th>
-                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Tgl Daftar</th>
-                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Status</th>
-                  <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic text-right">Tindakan</th>
+                   <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Kontak</th>
+                   <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Tgl Daftar</th>
+                   <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Status</th>
+                   <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic text-right">Tindakan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -353,25 +302,21 @@ export default function MasterAdminDashboard() {
                             {r.school_name[0]}
                           </div>
                           <div>
-                            <p className="text-xs font-black text-brand-sidebar italic uppercase tracking-tight">{r.school_name}</p>
-                            <p className="text-[10px] font-bold text-slate-400">NPSN: {r.npsn}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-6">
-                        <p className="text-xs font-black text-brand-sidebar uppercase italic">{r.admin_name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold">{r.admin_email}</p>
-                      </td>
-                      <td className="py-6">
-                        <a 
-                          href={`https://wa.me/${r.whatsapp}`} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black italic hover:bg-emerald-500 hover:text-white transition-all"
-                        >
-                          <Check className="w-3 h-3" /> {r.whatsapp}
-                        </a>
-                      </td>
+                             <p className="text-xs font-black text-brand-sidebar italic uppercase tracking-tight">{r.school_name}</p>
+                             <p className="text-[10px] font-bold text-slate-400">ID: {r.id}</p>
+                           </div>
+                         </div>
+                       </td>
+                       <td className="py-6">
+                         <a 
+                           href={`https://wa.me/${r.whatsapp}`} 
+                           target="_blank" 
+                           rel="noreferrer"
+                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black italic hover:bg-emerald-500 hover:text-white transition-all"
+                         >
+                           <Check className="w-3 h-3" /> {r.whatsapp}
+                         </a>
+                       </td>
                       <td className="py-6 text-[10px] font-bold text-slate-400 italic">
                         {r.created_at ? format(new Date(r.created_at), 'dd MMM yyyy') : '-'}
                       </td>
@@ -406,7 +351,7 @@ export default function MasterAdminDashboard() {
                           )}
                           {r.status === 'approved' && (
                              <a 
-                               href={`https://${r.slug || r.school_name.toLowerCase().replace(/ /g, '-')}.rsch.my.id`}
+                               href={`https://${r.subdomain || r.school_name.toLowerCase().replace(/ /g, '-')}.rsch.my.id`}
                                target="_blank"
                                rel="noreferrer"
                                className="text-slate-400 hover:text-brand-accent transition-colors"

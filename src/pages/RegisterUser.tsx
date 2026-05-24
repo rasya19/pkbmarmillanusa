@@ -24,7 +24,6 @@ export default function RegisterUser() {
         ...formData,
         school_id: school.npsn,
         status: 'pending',
-        is_approved: false,
         created_at: new Date().toISOString()
       }]);
       toast.success('Pendaftaran berhasil! Menunggu persetujuan Admin Sekolah.');

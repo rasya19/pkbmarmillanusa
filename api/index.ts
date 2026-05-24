@@ -73,26 +73,17 @@ app.delete('/api/delete-registration/:id', async (req, res) => {
     // 2. Kumpulkan semua kemungkinan domain/subdomain yang terhubung ke Vercel agar pembersihan 100% tuntas
     const domainsToDelete: string[] = [];
     
-    // a. Subdomain berdasarkan kolom 'slug'
-    if (registration.slug) {
-      domainsToDelete.push(`${registration.slug.toLowerCase().trim()}.rsch.my.id`);
-    }
-
-    // b. Subdomain berdasarkan kolom 'subdomain' atau 'subdomain_prefix' jika tersedia
+    // a. Subdomain murni dari kolom 'subdomain' 
     if (registration.subdomain) {
       const sub = registration.subdomain.toLowerCase().trim();
-      // Bila menyimpan nama domain lengkap
       if (sub.includes('.')) {
         domainsToDelete.push(sub);
       } else {
         domainsToDelete.push(`${sub}.rsch.my.id`);
       }
     }
-    if (registration.subdomain_prefix) {
-      domainsToDelete.push(`${registration.subdomain_prefix.toLowerCase().trim()}.rsch.my.id`);
-    }
 
-    // c. Fallback subdomain berdasarkan 'school_name' yang disinkronkan dengan landing page
+    // b. Fallback subdomain berdasarkan 'school_name' jika subdomain kosong
     if (registration.school_name) {
       const sanitizedSchoolName = registration.school_name
         .toLowerCase()

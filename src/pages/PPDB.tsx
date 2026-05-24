@@ -17,7 +17,6 @@ interface StudentRegistration {
   nik: string;
   created_at: string; // Updated name
   status: 'PENDING' | 'VERIFIED' | 'REJECTED';
-  is_approved: boolean;
 }
 
 export default function PPDB() {
@@ -86,7 +85,6 @@ export default function PPDB() {
           ...formData,
           school_name: school.name,
           status: 'PENDING',
-          is_approved: false,
           created_at: new Date().toISOString()
         }
       ]);

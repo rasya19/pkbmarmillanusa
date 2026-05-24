@@ -167,11 +167,11 @@ export default function AffiliateDashboard() {
                        <td className="px-6 py-6">
                           <div className="flex items-center gap-4">
                              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-brand-sidebar text-lg italic group-hover:bg-brand-accent group-hover:text-white transition-all">
-                                {r.name?.[0]}
+                                {r.school_name?.[0]}
                              </div>
                              <div>
-                                <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{r.name}</p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">Slug: {r.slug}</p>
+                                <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{r.school_name}</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">Domain: {r.subdomain}</p>
                              </div>
                           </div>
                        </td>
