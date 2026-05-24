@@ -25,13 +25,19 @@ export default function ForcePasswordChangeModal({ isOpen, userId, role, onSucce
     
     setSaving(true);
     try {
-      // 1. Update Auth Password
+      // 1. Verify and Refresh Session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        await supabase.auth.refreshSession();
+      }
+
+      // 2. Update Auth Password
       const { error: authError } = await supabase.auth.updateUser({ 
         password: newPassword 
       });
       if (authError) throw authError;
 
-      // 2. Update Profile flag (Double-tap naming convention for safety)
+      // 3. Update Profile flag (Double-tap naming convention for safety)
       const table = role === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
       const { error: dbError } = await supabase
         .from(table)

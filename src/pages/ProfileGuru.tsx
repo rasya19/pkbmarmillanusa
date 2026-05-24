@@ -87,6 +87,13 @@ export default function ProfileGuru() {
     e.preventDefault();
     setSavingBiodata(true);
     try {
+      // 1. Verify and Refresh Session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) throw new Error('Sesi kedaluwarsa. Silakan login kembali.');
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Sesi tidak valid');
 
@@ -137,15 +144,18 @@ export default function ProfileGuru() {
 
     setSavingPassword(true);
     try {
-      // 2. Verified Session Check
+      // 1. Verify and Refresh Session
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !sessionData.session) {
-        toast.error('Sesi Habis: Silakan login ulang.');
-        return;
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          toast.error('Sesi Habis: Silakan login ulang.');
+          return;
+        }
       }
 
-      // 3. Supabase Auth Update
+      // 2. Auth update with latest user identity
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('Sesi Habis: Silakan login ulang.');
