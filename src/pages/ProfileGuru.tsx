@@ -95,9 +95,10 @@ export default function ProfileGuru() {
 
       const updateData: any = {
         nama: biodata.nama,
+        nip: biodata.nip,
         email: biodata.email,
-        phone: biodata.phone,
         whatsapp: biodata.phone,
+        phone: biodata.phone,
         alamat: biodata.alamat
       };
 
@@ -273,12 +274,13 @@ export default function ProfileGuru() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 opacity-60">ID / NIP (Terkunci)</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">ID / NIP</label>
                   <input 
                     type="text" 
                     value={biodata.nip}
-                    disabled
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold opacity-60 cursor-not-allowed outline-none"
+                    onChange={(e) => setBiodata({...biodata, nip: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all"
+                    placeholder="Masukkan NIP/ID"
                   />
                 </div>
                 <div className="space-y-1.5">
