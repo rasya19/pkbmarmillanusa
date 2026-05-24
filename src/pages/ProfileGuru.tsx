@@ -127,10 +127,19 @@ export default function ProfileGuru() {
 
     setSavingPassword(true);
     try {
-      // 2. Clear previous error state (implicitly by starting loader)
-      console.log('Attempting to update password for user:', teacherId);
+      // 2. Verified Session Check
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        console.error('Session check failed:', sessionError);
+        toast.error('Sesi Habis: Silakan login ulang untuk melanjutkan pergantian password.');
+        // Optional: window.location.href = '/login'; 
+        return;
+      }
 
-      // 3. Supabase Auth Update
+      console.log('Session verified. Attempting to update password for user:', teacherId);
+
+      // 3. Supabase Auth Update with current session
       const { data, error: authError } = await supabase.auth.updateUser({
         password: passwordState.newPassword
       });

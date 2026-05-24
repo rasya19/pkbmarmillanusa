@@ -12,51 +12,31 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+        includeAssets: ['favicon.ico', 'logo-putih-192.png', 'logo-putih-512.png'],
         workbox: {
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // Increase to 5MB
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           cleanupOutdatedCaches: true,
-          runtimeCaching: [
-            {
-              urlPattern: ({ url }) => url.pathname.startsWith('/api') || url.hostname.includes('supabase.co') || url.hostname.includes('google.com'),
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'api-cache',
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 60 * 60 * 24, // 24 hours
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-          ],
         },
         manifest: {
-          name: 'PKBM Armilla Nusa',
-          short_name: 'ArmillaNusa',
-          description: 'Platform Manajemen Pembelajaran Terpadu untuk PKBM Armilla Nusa.',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
-          display: 'standalone',
-          orientation: 'portrait',
+          name: "RasyaTech Learning Platform",
+          short_name: "RasyaTech",
+          description: "Innovating the Future of Learning",
+          start_url: "/",
+          display: "standalone",
+          background_color: "#0B2447",
+          theme_color: "#FFFFFF",
           icons: [
             {
-              src: 'pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
+              "src": "/logo-putih-192.png",
+              "sizes": "192x192",
+              "type": "image/png",
+              "purpose": "any maskable"
             },
             {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png'
-            },
-            {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable'
+              "src": "/logo-putih-512.png",
+              "sizes": "512x512",
+              "type": "image/png",
+              "purpose": "any maskable"
             }
           ]
         }
