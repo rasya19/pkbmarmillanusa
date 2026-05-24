@@ -14,11 +14,14 @@ import {
   Upload,
   Link as LinkIcon,
   X,
-  Loader2
+  Loader2,
+  Save
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+
+import { useSchool } from '../contexts/SchoolContext';
 
 type ProgramLevel = 'Paket A' | 'Paket B' | 'Paket C';
 
@@ -34,6 +37,19 @@ interface Module {
 }
 
 export default function ModulKesetaraan() {
+  const { school } = useSchool();
+  const isReguler = school?.tipe_lembaga === 'REGULER';
+
+  const getLevelLabel = (lvl: string) => {
+    if (!isReguler) return lvl;
+    switch (lvl) {
+      case 'Paket A': return 'SD';
+      case 'Paket B': return 'SMP';
+      case 'Paket C': return 'SMA';
+      default: return lvl;
+    }
+  };
+
   const [activeTab, setActiveTab] = useState<'official' | 'internal'>('official');
   const [activeFilter, setActiveFilter] = useState<ProgramLevel | 'All'>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -126,7 +142,7 @@ export default function ModulKesetaraan() {
               activeTab === 'official' ? "bg-white text-brand-sidebar shadow-md" : "text-slate-400 hover:text-slate-600"
             )}
           >
-            Modul Resmi Kemendikbud
+            Modul Resmi {isReguler ? '(SD/SMP/SMA)' : 'Kemendikbud'}
           </button>
           <button 
             onClick={() => setActiveTab('internal')}
@@ -152,7 +168,7 @@ export default function ModulKesetaraan() {
                   : "bg-white border-slate-200 text-slate-400 hover:border-slate-300"
               )}
             >
-              {lvl}
+              {lvl === 'All' ? 'Semua' : getLevelLabel(lvl)}
             </button>
           ))}
         </div>
@@ -207,7 +223,7 @@ export default function ModulKesetaraan() {
                     <FileText className="w-6 h-6" />
                   </div>
                   <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-slate-100 text-slate-400 py-1.5 px-3 rounded-lg">
-                    {item.level}
+                    {getLevelLabel(item.level)}
                   </span>
                 </div>
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-1 truncate">
@@ -305,9 +321,9 @@ export default function ModulKesetaraan() {
                       onChange={(e) => setFormData({...formData, level: e.target.value as any})}
                       className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 text-xs font-bold focus:border-brand-accent outline-none appearance-none"
                     >
-                      <option>Paket A</option>
-                      <option>Paket B</option>
-                      <option>Paket C</option>
+                      <option value="Paket A">{getLevelLabel('Paket A')}</option>
+                      <option value="Paket B">{getLevelLabel('Paket B')}</option>
+                      <option value="Paket C">{getLevelLabel('Paket C')}</option>
                     </select>
                   </div>
                 </div>

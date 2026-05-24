@@ -15,11 +15,14 @@ import {
   Trash2,
   Lock,
   Plus,
-  Loader2
+  Loader2,
+  Save
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
+
+import { useSchool } from '../contexts/SchoolContext';
 
 const STANDARDS = [
   { id: 1, name: 'Standar Kelulusan', desc: 'SKL, Kompetensi Lulusan, Portofolio Lulusan.' },
@@ -42,6 +45,9 @@ interface AccreditationDoc {
 }
 
 export default function Akreditasi() {
+  const { school } = useSchool();
+  const isReguler = school?.tipe_lembaga === 'REGULER';
+
   const [selectedStandard, setSelectedStandard] = useState<typeof STANDARDS[0] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [docs, setDocs] = useState<AccreditationDoc[]>([]);
@@ -294,7 +300,7 @@ export default function Akreditasi() {
                   </div>
                   <div className="flex-1">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Security Guarantee</p>
-                    <p className="text-[9px] font-bold text-slate-500 mt-0.5">Berkas ini disimpan secara aman dan hanya dapat diakses oleh Admin berwenang untuk kebutuhan Akreditasi BAN PNF.</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-0.5">Berkas ini disimpan secara aman dan hanya dapat diakses oleh Admin berwenang untuk kebutuhan Akreditasi {isReguler ? 'BAN S/M' : 'BAN PNF'}.</p>
                   </div>
                 </div>
 

@@ -17,6 +17,7 @@ interface School {
   studentLimit?: number;
   custom_domain?: string;
   subscription_plan?: 'Silver' | 'Gold' | 'Platinum';
+  tipe_lembaga?: 'KESETARAAN' | 'REGULER';
 }
 
 interface SchoolContextType {
@@ -179,7 +180,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
                 logoUrl: data.logoUrl || data.logo_url,
                 themeColor: data.themeColor || data.theme_color,
                 expiryDate: data.expiryDate || data.expiry_date,
-                studentLimit: data.studentLimit || data.student_limit
+                studentLimit: data.studentLimit || data.student_limit,
+                tipe_lembaga: data.tipe_lembaga || 'KESETARAAN'
               };
               setSchool(mappedData);
             }
@@ -296,7 +298,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             logoUrl: data.logoUrl || data.logo_url,
             themeColor: data.themeColor || data.theme_color,
             expiryDate: data.expiryDate || data.expiry_date,
-            studentLimit: data.studentLimit || data.student_limit
+            studentLimit: data.studentLimit || data.student_limit,
+            tipe_lembaga: data.tipe_lembaga || 'KESETARAAN'
           };
           setSchool(mappedData);
         }

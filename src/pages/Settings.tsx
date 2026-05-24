@@ -13,8 +13,32 @@ import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
+import { useSchool } from '../contexts/SchoolContext';
+
 export default function Settings() {
+  const { school } = useSchool();
   const [loading, setLoading] = useState(false);
+  const [schoolType, setSchoolType] = useState(school?.tipe_lembaga || 'KESETARAAN');
+
+  const handleUpdateSchoolType = async () => {
+    if (!school?.id) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .update({ tipe_lembaga: schoolType })
+        .eq('id', school.id);
+
+      if (error) throw error;
+      toast.success(`Tipe Lembaga berhasil diubah menjadi ${schoolType}`);
+      // Refresh might be needed if context doesn't auto-update
+      window.location.reload();
+    } catch (err: any) {
+      toast.error('Gagal update: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   const [passwords, setPasswords] = useState({
     current: '',
     new: '',
@@ -81,6 +105,57 @@ export default function Settings() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* School Profile Section */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-brand-accent/10 rounded-2xl flex items-center justify-center">
+              <SettingsIcon className="w-5 h-5 text-brand-accent" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-800 uppercase italic">Profil Lembaga</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Arsitektur & Labeling Menu</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipe Institusi</label>
+              <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                <button 
+                  onClick={() => setSchoolType('KESETARAAN')}
+                  className={cn(
+                    "flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                    schoolType === 'KESETARAAN' ? "bg-white text-brand-sidebar shadow-sm" : "text-slate-400"
+                  )}
+                >
+                  KESETARAAN
+                </button>
+                <button 
+                  onClick={() => setSchoolType('REGULER')}
+                  className={cn(
+                    "flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                    schoolType === 'REGULER' ? "bg-white text-brand-sidebar shadow-sm" : "text-slate-400"
+                  )}
+                >
+                  REGULER
+                </button>
+              </div>
+              <p className="text-[9px] font-bold text-slate-400 mt-2 italic px-1">
+                {schoolType === 'KESETARAAN' 
+                  ? "* Menggunakan istilah: Paket A, Paket B, Paket C (Standard PKBM)." 
+                  : "* Menggunakan istilah: SD, SMP, SMA (Sekolah Formal/Reguler)."}
+              </p>
+            </div>
+            <button 
+              onClick={handleUpdateSchoolType}
+              disabled={loading || schoolType === school?.tipe_lembaga}
+              className="w-full bg-brand-accent text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-sidebar transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20 disabled:opacity-50 disabled:shadow-none"
+            >
+              <Save className="w-4 h-4" /> Terapkan Arsitektur
+            </button>
+          </div>
+        </div>
+
         {/* Password Section */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
           <div className="flex items-center gap-3 mb-2">
