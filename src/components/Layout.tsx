@@ -182,7 +182,7 @@ export default function Layout() {
 
     if (isAdmin) {
       
-      const goldFeatures = ['/dashboard/keuangan', '/keuangan/tagihan', '/dashboard/raport', '/dashboard/analitik'];
+      const goldFeatures = ['/dashboard/keuangan', '/dashboard/tagihan', '/dashboard/raport', '/dashboard/analitik'];
       const platinumFeatures = ['/dashboard/aset', '/dashboard/statistik']; 
       
       const isGoldPath = goldFeatures.some(p => currentPath.includes(p));
@@ -190,7 +190,15 @@ export default function Layout() {
 
       let featureName = '';
       if (isPlatinumPath) featureName = currentPath.includes('aset') ? 'Manajemen Aset' : 'Statistik Eksekutif';
-      if (isGoldPath) featureName = currentPath.includes('keuangan') ? 'Manajemen Keuangan' : 'E-Rapor';
+      if (isGoldPath) {
+        if (currentPath.includes('keuangan')) {
+          featureName = 'Manajemen Keuangan';
+        } else if (currentPath.includes('tagihan')) {
+          featureName = 'Tagihan';
+        } else {
+          featureName = 'E-Rapor';
+        }
+      }
 
       const dashboardPath = prefix + '/dashboard';
 
@@ -337,8 +345,8 @@ export default function Layout() {
             icon: FolderOpen, 
             label: 'Master Data', 
             subItems: [
-              { icon: Users, label: 'Manajemen Siswa', path: `${prefix}/data-siswa`, minPlan: 'Silver' },
-              { icon: UserCheck, label: 'Manajemen Guru', path: `${prefix}/data-guru`, minPlan: 'Silver' },
+              { icon: Users, label: 'Manajemen Siswa', path: `${prefix}/dashboard/data-siswa`, minPlan: 'Silver' },
+              { icon: UserCheck, label: 'Manajemen Guru', path: `${prefix}/dashboard/data-guru`, minPlan: 'Silver' },
               { icon: Book, label: 'Kelola Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran`, minPlan: 'Silver' },
               { icon: Layers, label: 'Manajemen Kelas', path: `${prefix}/dashboard/kelas`, minPlan: 'Silver' },
               { icon: UserPlus, label: 'Data Pendaftar (PPDB)', path: `${prefix}/dashboard/ppdb`, minPlan: 'Silver' },
@@ -377,7 +385,7 @@ export default function Layout() {
             minPlan: 'Gold',
             subItems: [
               { icon: Wallet, label: 'Pembayaran', path: `${prefix}/dashboard/keuangan`, minPlan: 'Gold' },
-              { icon: FileText, label: 'Tagihan', path: `${prefix}/keuangan/tagihan`, minPlan: 'Gold' },
+              { icon: FileText, label: 'Tagihan', path: `${prefix}/dashboard/tagihan`, minPlan: 'Gold' },
             ]
           },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi`, minPlan: 'Silver' },
@@ -399,7 +407,7 @@ export default function Layout() {
       case 'Guru':
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
-          { icon: Users, label: 'Data Siswa', path: `${prefix}/data-siswa` },
+          { icon: Users, label: 'Data Siswa', path: `${prefix}/dashboard/data-siswa` },
           {
             icon: BookOpen,
             label: 'Akademik',
