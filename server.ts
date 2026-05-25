@@ -16,6 +16,54 @@ async function startServer() {
 
   app.use(express.json());
 
+  // API Route for Pedagogical Dialog Feedback via Gemini AI (Kurikulum Merdeka)
+  app.post("/api/generate-narasi", async (req, res) => {
+    const { mapel, uts, uas, tugas, rata, predikat } = req.body;
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: "GEMINI_API_KEY belum dikonfigurasi di panel Settings > Secrets Anda."
+      });
+    }
+
+    try {
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+
+      const prompt = `Buatlah narasi capaian kompetensi (Kurikulum Merdeka) singkat, profesional, dan menyemangati dalam Bahasa Indonesia untuk siswa dengan data mata pelajaran berikut:
+Mata Pelajaran: ${mapel || 'Mata Pelajaran'}
+Nilai UTS: ${uts || 0}
+Nilai UAS: ${uas || 0}
+Nilai Tugas: ${tugas || 0}
+Nilai Rata-Rata: ${rata || 0}
+Predikat Kelulusan: ${predikat || 'Baik'}
+
+Berikan deskripsi objektif tentang apa saja yang telah dikuasai dengan baik oleh siswa dan saran konkret yang konstruktif untuk meningkatkan performa belajarnya ke depan secara berimbang dan ringkas (maksimal 3 kalimat). Jangan menyertakan kata sambutan, salam pembuka, atau penutup. Langsung berikan narasi kompetensinya saja.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          temperature: 0.7,
+        }
+      });
+
+      const text = response.text || "";
+      res.json({ success: true, text: text.trim() });
+    } catch (err: any) {
+      console.error("Gemini Generation Error:", err);
+      res.status(500).json({ success: false, message: err?.message || "Internal server error during Gemini execution." });
+    }
+  });
+
   // Supabase Admin Client
   const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";

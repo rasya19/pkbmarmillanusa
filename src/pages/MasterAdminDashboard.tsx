@@ -18,6 +18,9 @@ interface Registration {
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   subdomain?: string;
+  paket?: 'Silver' | 'Gold' | 'Platinum' | string;
+  package_type?: 'Silver' | 'Gold' | 'Platinum' | string;
+  subscription_plan?: 'Silver' | 'Gold' | 'Platinum' | string;
 }
 
 export default function MasterAdminDashboard() {
@@ -286,6 +289,7 @@ export default function MasterAdminDashboard() {
                   <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Institusi Sekolah</th>
                    <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Kontak</th>
                    <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Tgl Daftar</th>
+                   <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Paket Langganan</th>
                    <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Status</th>
                    <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic text-right">Tindakan</th>
                 </tr>
@@ -319,6 +323,37 @@ export default function MasterAdminDashboard() {
                        </td>
                       <td className="py-6 text-[10px] font-bold text-slate-400 italic">
                         {r.created_at ? format(new Date(r.created_at), 'dd MMM yyyy') : '-'}
+                      </td>
+                      <td className="py-6">
+                        {(() => {
+                          const plan = r.paket || r.package_type || r.subscription_plan;
+                          if (plan === 'Platinum') {
+                            return (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-50 text-cyan-700 border border-cyan-300 rounded-full text-[9px] font-black uppercase tracking-widest italic shadow-sm">
+                                💎 Platinum
+                              </span>
+                            );
+                          }
+                          if (plan === 'Gold') {
+                            return (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-300 rounded-full text-[9px] font-black uppercase tracking-widest italic shadow-sm">
+                                👑 Gold
+                              </span>
+                            );
+                          }
+                          if (plan === 'Silver') {
+                            return (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[9px] font-black uppercase tracking-widest italic shadow-sm">
+                                🥈 Silver
+                              </span>
+                            );
+                          }
+                          return (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-50 text-slate-400 border border-slate-200 rounded-full text-[9px] font-bold uppercase tracking-widest italic">
+                              Belum Memilih
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="py-6">
                         <span className={cn(

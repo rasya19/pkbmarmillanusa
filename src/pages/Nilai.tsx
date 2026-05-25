@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileBarChart, Download, Trophy, Target, Plus, Save, Trash2, Edit3, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { toast } from 'sonner';
 
 interface Grade {
   mapel: string;
@@ -46,6 +47,56 @@ export default function Nilai() {
   useEffect(() => {
     localStorage.setItem('school_catatan_wali', catatan);
   }, [catatan]);
+
+  const [narasiList, setNarasiList] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('school_narasi_list');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [loadingRows, setLoadingRows] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    localStorage.setItem('school_narasi_list', JSON.stringify(narasiList));
+  }, [narasiList]);
+
+  const handleGenerateNarasi = async (index: number) => {
+    const n = nilaiList[index];
+    const key = `${n.mapel}_${index}`;
+    
+    setLoadingRows(prev => ({ ...prev, [index]: true }));
+    try {
+      const response = await fetch('/api/generate-narasi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mapel: n.mapel,
+          uts: n.uts,
+          uas: n.uas,
+          tugas: n.tugas,
+          rata: n.rata,
+          predikat: getPredikat(n.rata).label,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setNarasiList(prev => ({
+          ...prev,
+          [key]: data.text,
+        }));
+        toast.success(`Narasi AI untuk ${n.mapel} berhasil dibuat!`);
+      } else {
+        throw new Error(data.message || 'Gagal merespon dari server.');
+      }
+    } catch (error: any) {
+      console.error("Gemini Frontend Error:", error);
+      toast.error(error?.message || 'Gagal menghubungi Gemini AI.');
+    } finally {
+      setLoadingRows(prev => ({ ...prev, [index]: false }));
+    }
+  };
 
   const handleAddMapel = () => {
     setNilaiList([...nilaiList, { mapel: 'Mata Pelajaran Baru', uts: 0, uas: 0, tugas: 0, rata: 0 }]);
