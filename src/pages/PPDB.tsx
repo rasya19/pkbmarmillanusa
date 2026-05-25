@@ -130,7 +130,7 @@ export default function PPDB() {
       
       // 1. Prepare student data from applicant
       const studentData = {
-        school_id: school?.npsn || applicant.npsn,
+        school_id: school?.slug || applicant.school_id,
         nama: applicant.name,
         nisn: applicant.nisn || '',
         nik: applicant.nik || '',

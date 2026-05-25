@@ -32,7 +32,7 @@ export default function Kelas() {
   const fetchKelasList = async () => {
     if (!school) return;
     try {
-      const { data, error } = await supabase.from('kelas').select('*').eq('school_id', school.npsn).order('nama_kelas', { ascending: true });
+      const { data, error } = await supabase.from('kelas').select('*').eq('school_id', school.slug).order('nama_kelas', { ascending: true });
       if (data) {
         setClasses(data.map((d: any) => ({
           id: d.id,
@@ -117,7 +117,8 @@ export default function Kelas() {
     try {
       const payload: any = {
         nama_kelas: formData.nama_kelas,
-        tingkat: formData.tingkat
+        tingkat: formData.tingkat,
+        school_id: school.slug
       };
       if (formData.wali_kelas_id) {
          payload.wali_kelas_id = formData.wali_kelas_id;

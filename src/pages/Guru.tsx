@@ -51,7 +51,7 @@ export default function Guru() {
     if (!school) return;
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.from('profiles_guru').select('*').eq('school_id', school.npsn).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('profiles_guru').select('*').eq('school_id', school.slug).order('created_at', { ascending: false });
       
       if (error && !error.message.includes('Could not find the table')) {
         console.error('Error fetching guru:', error);
@@ -178,7 +178,7 @@ export default function Guru() {
         whatsapp: formData.phone, // Send both just in case
         alamat: formData.alamat,
         password: formData.password,
-        school_id: school.npsn
+        school_id: school.slug
       };
 
       // If Guru edits their own profile, clear the force change flag
@@ -356,7 +356,7 @@ export default function Guru() {
         nip: String(item.NIP || item.nip || ''),
         email: item.Email || item.email || '',
         phone: item.Telepon || item.phone || String(item.phone || ''),
-        school_id: school.npsn,
+        school_id: school.slug,
         password: String(item.Password || item.password || '123456'),
         must_change_password: true
       }));

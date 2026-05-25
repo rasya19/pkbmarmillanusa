@@ -78,13 +78,13 @@ export default function PPDBRegistration() {
 
     setIsLoading(true);
     try {
-      const schoolId = school?.id || 'pkbmarmillanusa';
+      const schoolSlug = school?.slug || 'pkbmarmillanusa';
       const schoolName = school?.name || 'PKBM Armilla Nusa';
 
       const { error } = await supabase.from('ppdb_registrations').insert([
         {
           ...formData,
-          school_id: schoolId,
+          school_id: schoolSlug,
           school_name: schoolName,
           status: 'PENDING',
           created_at: new Date().toISOString()

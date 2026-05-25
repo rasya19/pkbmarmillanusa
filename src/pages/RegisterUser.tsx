@@ -22,7 +22,7 @@ export default function RegisterUser() {
     try {
       await supabase.from('user_registrations').insert([{
         ...formData,
-        school_id: school.npsn,
+        school_id: school.slug,
         status: 'pending',
         created_at: new Date().toISOString()
       }]);

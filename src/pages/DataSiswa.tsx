@@ -32,7 +32,7 @@ export default function DataSiswa() {
   React.useEffect(() => {
     const fetchClasses = async () => {
       if (schoolLoading || !school) return;
-      const { data } = await supabase.from('kelas').select('id, nama_kelas').eq('school_id', school.npsn).order('nama_kelas', { ascending: true });
+      const { data } = await supabase.from('kelas').select('id, nama_kelas').eq('school_id', school.slug).order('nama_kelas', { ascending: true });
       if (data) {
         setClasses(data.map(d => ({ id: d.id, name: d.nama_kelas })));
       }
@@ -76,7 +76,7 @@ export default function DataSiswa() {
       const { data, error } = await supabase
         .from('profiles_siswa')
         .select('*')
-        .eq('school_id', school.npsn)
+        .eq('school_id', school.slug)
         .order('nama', { ascending: true });
 
       if (error) {
@@ -154,7 +154,7 @@ export default function DataSiswa() {
             whatsapp: formData.whatsapp,
             status: formData.status,
             photourl: formData.photourl,
-            school_id: school.npsn,
+            school_id: school.slug,
             password: formData.password
           })
           .eq('id', formData.id);
@@ -171,7 +171,7 @@ export default function DataSiswa() {
             whatsapp: formData.whatsapp,
             status: formData.status,
             photourl: formData.photourl,
-            school_id: school.npsn,
+            school_id: school.slug,
             password: formData.password || '123456',
             must_change_password: true
           }])
@@ -229,7 +229,7 @@ export default function DataSiswa() {
           whatsapp: String(item.WhatsApp || item.noHp || ''),
           status: item.Status || item.status || 'Aktif',
           photourl: item.photourl || '',
-          school_id: school.npsn,
+          school_id: school.slug,
           password: String(item.Password || item.password || '123456'),
           must_change_password: true
         })).filter(s => s.nama);

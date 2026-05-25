@@ -131,6 +131,14 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             return; // Success
           }
           console.warn('DEBUG [SchoolContext] Slug lookup failed for:', slug, slugError);
+          
+          // If we are on master domain and the slug-based lookup fails, just clear it and continue as master
+          if (isMaster) {
+            console.log('DEBUG [SchoolContext] Slug lookup failed on master domain, continuing as master without school context.');
+            setSchool(null);
+            setLoading(false);
+            return;
+          }
         } catch (e) {
           console.error('DEBUG [SchoolContext] Slug resolution error:', e);
         }
@@ -147,6 +155,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             .maybeSingle();
             
           if (!domainError && data) {
+            // ... (rest of the logic)
             console.log('DEBUG [SchoolContext] Found school by custom_domain:', data.name);
             const rawStatus = data.status;
             const isStatusActive = rawStatus === undefined || rawStatus === null || 
@@ -192,7 +201,12 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             }
           } else {
             console.warn('DEBUG [SchoolContext] All lookups failed. Domain error:', domainError);
-            setError('Sekolah tidak ditemukan');
+            if (!isMaster) {
+               setError('Sekolah tidak ditemukan');
+            } else {
+               setSchool(null);
+               setError(null);
+            }
           }
         } catch (err) {
           console.error('DEBUG [SchoolContext] Domain resolution crash:', err);
