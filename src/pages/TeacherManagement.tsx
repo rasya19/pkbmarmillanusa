@@ -149,7 +149,7 @@ export default function TeacherManagement() {
         phone: formData.phone,
         whatsapp: formData.phone,
         alamat: formData.alamat,
-        password: formData.password,
+        password: formData.password || '123456',
         school_id: school.slug
       };
 
@@ -157,10 +157,17 @@ export default function TeacherManagement() {
         const { error } = await supabase.from('profiles_guru').update(payload).eq('id', editingGuru.id);
         if (error) throw error;
       } else {
-        payload.must_change_password = true;
-        if (!payload.password) payload.password = '123456';
-        const { error } = await supabase.from('profiles_guru').insert([payload]);
-        if (error) throw error;
+        const payloadWithPass = {
+          ...payload,
+          must_change_password: true
+        };
+        const { error } = await supabase.from('profiles_guru').insert([payloadWithPass]);
+        
+        if (error) {
+          console.warn('Insert with must_change_password failed, retrying without it...', error);
+          const { error: retryError } = await supabase.from('profiles_guru').insert([payload]);
+          if (retryError) throw retryError;
+        }
       }
 
       toast.success('Data guru berhasil disimpan');

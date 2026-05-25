@@ -113,7 +113,11 @@ export default function TeacherProfile() {
       if (user) {
         const currentRole = localStorage.getItem('userRole') || 'Guru';
         const table = currentRole === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
-        await supabase.from(table).update({ must_change_password: false }).eq('id', user.id);
+        const { error: dbErr } = await supabase.from(table).update({ must_change_password: false }).eq('id', user.id);
+        if (dbErr) {
+          console.warn('Update profiles must_change_password failed, retrying with harus_mengubah_kata_sandi:', dbErr);
+          await supabase.from(table).update({ harus_mengubah_kata_sandi: false }).eq('id', user.id);
+        }
       }
 
       toast.success('Password Berhasil Diperbarui!');

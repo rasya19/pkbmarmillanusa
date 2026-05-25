@@ -162,22 +162,38 @@ export default function DataSiswa() {
         if (error) throw error;
         setStudents(students.map(s => s.id === formData.id ? { ...s, ...formData } as Student : s));
       } else {
-        const { data, error } = await supabase
+        const payload: any = {
+          nisn: formData.nisn || null,
+          nama: formData.nama,
+          class: formData.class,
+          whatsapp: formData.whatsapp,
+          status: formData.status,
+          photourl: formData.photourl,
+          school_id: school.slug,
+          password: formData.password || '123456'
+        };
+
+        const payloadWithPass = {
+          ...payload,
+          must_change_password: true
+        };
+
+        let { data, error } = await supabase
           .from('profiles_siswa')
-          .insert([{
-            nisn: formData.nisn || null,
-            nama: formData.nama,
-            class: formData.class,
-            whatsapp: formData.whatsapp,
-            status: formData.status,
-            photourl: formData.photourl,
-            school_id: school.slug,
-            password: formData.password || '123456',
-            must_change_password: true
-          }])
+          .insert([payloadWithPass])
           .select();
 
-        if (error) throw error;
+        if (error) {
+          console.warn('Insert with must_change_password failed, retrying without it...', error);
+          const { data: retryData, error: retryError } = await supabase
+            .from('profiles_siswa')
+            .insert([payload])
+            .select();
+          
+          if (retryError) throw retryError;
+          data = retryData;
+        }
+
         if (data && data.length > 0) {
           setStudents([...students, data[0] as Student]);
         }
@@ -236,7 +252,12 @@ export default function DataSiswa() {
 
         if (toInsert.length > 0) {
           const { error } = await supabase.from('profiles_siswa').insert(toInsert);
-          if (error) throw error;
+          if (error) {
+            console.warn('Import with must_change_password failed, retrying without it...', error);
+            const cleanToInsert = toInsert.map(({ must_change_password, ...rest }) => rest);
+            const { error: retryError } = await supabase.from('profiles_siswa').insert(cleanToInsert);
+            if (retryError) throw retryError;
+          }
           alert(`Berhasil mengimpor ${toInsert.length} data siswa.`);
           fetchStudents();
         } else {

@@ -37,17 +37,56 @@ export default function ForcePasswordChangeModal({ isOpen, userId, role, onSucce
       });
       if (authError) throw authError;
 
-      // 3. Update Profile flag (Double-tap naming convention for safety)
+      // 3. Update Profile flag (Double-tap naming convention for safety, resilient to schema)
       const table = role === 'Siswa' ? 'profiles_siswa' : 'profiles_guru';
-      const { error: dbError } = await supabase
-        .from(table)
-        .update({ 
-          must_change_password: false,
-          harus_mengubah_kata_sandi: false
-        })
-        .eq('id', userId);
-      
-      if (dbError) throw dbError;
+      let dbError: any = null;
+      try {
+        const { error } = await supabase
+          .from(table)
+          .update({ 
+            must_change_password: false,
+            harus_mengubah_kata_sandi: false
+          })
+          .eq('id', userId);
+        dbError = error;
+      } catch (err) {
+        dbError = err;
+      }
+
+      if (dbError) {
+        // Try without must_change_password
+        try {
+          const { error } = await supabase
+            .from(table)
+            .update({ 
+              harus_mengubah_kata_sandi: false
+            })
+            .eq('id', userId);
+          dbError = error;
+        } catch (err) {
+          dbError = err;
+        }
+      }
+
+      if (dbError) {
+        // Try without harus_mengubah_kata_sandi
+        try {
+          const { error } = await supabase
+            .from(table)
+            .update({ 
+              must_change_password: false
+            })
+            .eq('id', userId);
+          dbError = error;
+        } catch (err) {
+          dbError = err;
+        }
+      }
+
+      // If both fail but it's just missing columns, we can proceed anyway since auth password succeeded
+      if (dbError && !dbError.message?.includes('column') && !dbError.message?.includes('does not exist')) {
+        throw dbError;
+      }
 
       toast.success('Keamanan Berhasil Diperbarui! Selamat datang di dashboard.');
       onSuccess();
