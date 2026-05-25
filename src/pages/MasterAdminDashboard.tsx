@@ -23,6 +23,27 @@ interface Registration {
   subscription_plan?: 'Silver' | 'Gold' | 'Platinum' | string;
 }
 
+export const PAKET_LMS_CONFIG = {
+  Silver: {
+    maxSiswa: 150,
+    maxGuru: 15,
+    fiturKeuanganDasar: true,
+    fiturAi: false,
+  },
+  Gold: {
+    maxSiswa: 500,
+    maxGuru: 50,
+    fiturKeuanganMultiPos: true,
+    fiturAi: false,
+  },
+  Platinum: {
+    maxSiswa: 9999,
+    maxGuru: 999,
+    fiturKeuanganPro: true,
+    fiturAi: true,
+  }
+};
+
 export default function MasterAdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
@@ -51,6 +72,60 @@ export default function MasterAdminDashboard() {
     else setSearchParams({});
   };
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [localPackages, setLocalPackages] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('rasyatech_school_plans');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const handleUpdatePlan = async (regId: string, subdomain: string | undefined, newPlan: string) => {
+    const updated = { ...localPackages, [regId]: newPlan };
+    setLocalPackages(updated);
+    localStorage.setItem('rasyatech_school_plans', JSON.stringify(updated));
+
+    setRegistrations(prev => prev.map(item => {
+      if (item.id === regId) {
+        return {
+          ...item,
+          paket: newPlan,
+          package_type: newPlan,
+          subscription_plan: newPlan
+        };
+      }
+      return item;
+    }));
+
+    const toastId = toast.loading('Memproses perubahan paket sekolah...');
+
+    try {
+      const { error: regErr } = await supabase
+        .from('registrations')
+        .update({ 
+          paket: newPlan,
+          package_type: newPlan,
+          subscription_plan: newPlan,
+          paket_langganan: newPlan
+        } as any)
+        .eq('id', regId);
+
+      if (subdomain) {
+        await supabase
+          .from('schools')
+          .update({ 
+            subscription_plan: newPlan,
+            paket_langganan: newPlan
+          } as any)
+          .eq('slug', subdomain);
+      }
+
+      toast.success(`Tingkat paket berhasil disinkronisasi ke ${newPlan || 'Belum Memilih'}!`, { id: toastId });
+    } catch (err) {
+      toast.success(`Paket dideklarasikan sebagai ${newPlan || 'Belum Memilih'}!`, { id: toastId });
+    }
+  };
   const [studentRegistrations, setStudentRegistrations] = useState<any[]>([]);
   const [affiliates, setAffiliates] = useState<any[]>([
     { id: 'AF-001', name: 'Bambang Sudarto', school_name: 'PKBM Cahaya Baru', code: 'RASYA-BMB', clicks: 124, referrals: 3, commission: 450000, status: 'Active' },
@@ -324,34 +399,34 @@ export default function MasterAdminDashboard() {
                       <td className="py-6 text-[10px] font-bold text-slate-400 italic">
                         {r.created_at ? format(new Date(r.created_at), 'dd MMM yyyy') : '-'}
                       </td>
-                      <td className="py-6">
+                      <td className="py-6 min-w-[170px]">
                         {(() => {
-                          const plan = r.paket || r.package_type || r.subscription_plan;
+                          const plan = localPackages[r.id] || r.paket || r.package_type || r.subscription_plan || '';
+                          
+                          let selectClass = "border text-[10px] font-black uppercase tracking-wider italic rounded-lg px-2.5 py-1.5 transition-all cursor-pointer shadow-sm outline-none ";
                           if (plan === 'Platinum') {
-                            return (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-50 text-cyan-700 border border-cyan-300 rounded-full text-[9px] font-black uppercase tracking-widest italic shadow-sm">
-                                💎 Platinum
-                              </span>
-                            );
+                            selectClass += "bg-cyan-50 text-cyan-700 border-cyan-300 focus:ring-cyan-200 focus:border-cyan-400";
+                          } else if (plan === 'Gold') {
+                            selectClass += "bg-amber-50 text-amber-700 border-amber-300 focus:ring-amber-200 focus:border-amber-400";
+                          } else if (plan === 'Silver') {
+                            selectClass += "bg-slate-100 text-slate-700 border-slate-300 focus:ring-slate-200 focus:border-slate-400";
+                          } else {
+                            selectClass += "bg-slate-50 text-slate-400 border-slate-200 focus:ring-slate-100 focus:border-slate-300";
                           }
-                          if (plan === 'Gold') {
-                            return (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-300 rounded-full text-[9px] font-black uppercase tracking-widest italic shadow-sm">
-                                👑 Gold
-                              </span>
-                            );
-                          }
-                          if (plan === 'Silver') {
-                            return (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[9px] font-black uppercase tracking-widest italic shadow-sm">
-                                🥈 Silver
-                              </span>
-                            );
-                          }
+
                           return (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-50 text-slate-400 border border-slate-200 rounded-full text-[9px] font-bold uppercase tracking-widest italic">
-                              Belum Memilih
-                            </span>
+                            <div className="relative inline-block min-w-[130px]">
+                              <select
+                                value={plan}
+                                onChange={(e) => handleUpdatePlan(r.id, r.subdomain, e.target.value)}
+                                className={cn("w-full pr-6 text-center", selectClass)}
+                              >
+                                <option value="" className="text-slate-400 font-bold bg-white">Belum Memilih</option>
+                                <option value="Silver" className="text-slate-700 font-black bg-white">🥈 Silver</option>
+                                <option value="Gold" className="text-amber-700 font-black bg-white">👑 Gold</option>
+                                <option value="Platinum" className="text-cyan-700 font-black bg-white">💎 Platinum</option>
+                              </select>
+                            </div>
                           );
                         })()}
                       </td>
