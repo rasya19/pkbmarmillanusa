@@ -126,10 +126,32 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             .maybeSingle();
 
           if (data && !slugError) {
-            console.log('DEBUG [SchoolContext] Found school by slug:', data.name);
+            console.log('DEBUG [SchoolContext] Found school by slug:', data.name || data.school_name || slug);
             await setSchoolBySlug(slug);
             return; // Success
           }
+          
+          // Fallback Priority 1.5: Try registrations table if schools lookup failed
+          const { data: regData } = await supabase
+            .from('registrations')
+            .select('school_name, status')
+            .eq('subdomain', slug)
+            .maybeSingle();
+            
+          if (regData) {
+             console.log('DEBUG [SchoolContext] Found school in registrations for fallback:', regData.school_name);
+             const mappedData: School = {
+               id: slug,
+               name: regData.school_name || 'PKBM Armilla Nusa',
+               slug: slug,
+               status: regData.status || 'approved'
+             };
+             setSchool(mappedData);
+             setLoading(false);
+             setError(null);
+             return;
+          }
+
           console.warn('DEBUG [SchoolContext] Slug lookup failed for:', slug, slugError);
           
           // If we are on master domain and the slug-based lookup fails, just clear it and continue as master
@@ -241,6 +263,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       if (!fetchError && data) {
         setIsBlocked(false);
         
+        console.log('DEBUG [SchoolContext] setSchoolBySlug data:', JSON.stringify(data));
+
         const rawStatus = data.status;
         const isActiveCol = data.is_active;
         const isStatusActive = rawStatus === undefined || rawStatus === null || 
