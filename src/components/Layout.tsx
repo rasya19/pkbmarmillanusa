@@ -175,8 +175,11 @@ export default function Layout() {
         const currentRole = rawRole as Role;
         
         // 2. Immediate Security Check for Teachers/Students
+        const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
+        const isPrincipal = user.email && principalEmails.includes(user.email.toLowerCase().trim());
         const adminRoles = ['Admin', 'SuperAdmin'];
-        if (!adminRoles.includes(currentRole) && (currentRole === 'Guru' || currentRole === 'Siswa')) {
+        
+        if (!isPrincipal && !adminRoles.includes(currentRole) && (currentRole === 'Guru' || currentRole === 'Siswa')) {
           const table = currentRole === 'Guru' ? 'profiles_guru' : 'profiles_siswa';
           const identifier = currentRole === 'Guru' ? 'email' : 'nisn';
           const val = currentRole === 'Guru' ? user.email : user.email?.split('@')[0];
@@ -210,11 +213,8 @@ export default function Layout() {
         }
 
         // 3. Admin Roles & Permissions
-        const principalEmails = ['ismanto095@gmail.com', 'pkbmarmillanusa@gmail.com', 'armillanusa@gmail.com'];
-        const isStaffOrStudent = currentRole === 'Guru' || currentRole === 'Siswa';
-        
-        if (!isStaffOrStudent && user.email && principalEmails.includes(user.email.toLowerCase().trim())) {
-          const forcedRole = user.email.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+        if (isPrincipal) {
+          const forcedRole = user.email!.toLowerCase().trim() === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
           setRole(forcedRole);
           localStorage.setItem('userRole', forcedRole);
         }

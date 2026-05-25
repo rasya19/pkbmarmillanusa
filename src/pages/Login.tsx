@@ -343,10 +343,17 @@ export default function Login() {
           .or(`id.eq.${data.user.id},email.eq.${data.user.email}`)
           .maybeSingle();
         
-        let finalRole = profile?.role || 'Guru';
+        let finalRole = profile?.role;
         let profileName = profile?.nama || 'User';
 
-        if (!profile) {
+        const userEmailLower = (data.user.email || '').toLowerCase().trim();
+        if (userEmailLower === 'ismanto095@gmail.com') {
+          finalRole = 'SuperAdmin';
+        } else if (userEmailLower === 'pkbmarmillanusa@gmail.com' || userEmailLower === 'armillanusa@gmail.com') {
+          finalRole = 'Admin';
+        }
+
+        if (!finalRole && !profile) {
           const { data: guru } = await supabase
             .from('profiles_guru')
             .select('nama, email')
@@ -357,6 +364,22 @@ export default function Login() {
             finalRole = 'Guru';
             profileName = guru.nama;
             localStorage.setItem('teacherEmail', guru.email || '');
+          }
+        }
+
+        if (!finalRole) {
+          if (loginRole === 'Admin') {
+            finalRole = userEmailLower === 'ismanto095@gmail.com' ? 'SuperAdmin' : 'Admin';
+          } else {
+            finalRole = loginRole || 'Guru';
+          }
+        }
+
+        if (profileName === 'User' || !profileName) {
+          if (finalRole === 'SuperAdmin') {
+            profileName = 'Administrator';
+          } else if (finalRole === 'Admin') {
+            profileName = 'Admin PKBM Armilla';
           }
         }
 
