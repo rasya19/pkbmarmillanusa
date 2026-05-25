@@ -152,7 +152,15 @@ export default function Nilai() {
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-brand-border text-center italic">UAS</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-brand-border text-center italic">Tugas</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-brand-accent uppercase tracking-widest border-b border-brand-border text-center italic">Rata-Rata</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-brand-accent uppercase tracking-widest border-b border-brand-border text-center italic">Predikat</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-brand-border text-center italic">Predikat</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-brand-border text-center italic min-w-[280px]">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-slate-700">Narasi Kurikulum Merdeka</span>
+                    <span className="bg-indigo-100 text-indigo-700 font-extrabold text-[8px] px-2 py-0.5 rounded-full border border-indigo-200 tracking-wider">
+                      COMING SOON (INTEGRASI GEMINI AI)
+                    </span>
+                  </div>
+                </th>
                 {isEditMode && <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-brand-border text-center">Aksi</th>}
               </tr>
             </thead>
@@ -218,6 +226,22 @@ export default function Nilai() {
                     <span className={cn("text-xs font-black uppercase tracking-widest", getPredikat(n.rata).color)}>
                       {getPredikat(n.rata).label}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 border-b border-brand-border min-w-[280px]">
+                    <div className="relative flex flex-col gap-2 p-1.5 bg-slate-50/50 rounded-xl border border-slate-100 opacity-60">
+                      <textarea
+                        disabled
+                        className="w-full bg-white border border-slate-200 rounded-lg p-2 text-[10px] text-slate-400 font-medium resize-none h-12 outline-none cursor-not-allowed"
+                        placeholder="Kompetensi siswa otomatis tergenerate berdasarkan capaian target..."
+                      />
+                      <button
+                        disabled
+                        type="button"
+                        className="w-full bg-indigo-50 text-indigo-400 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-not-allowed border border-indigo-100/50"
+                      >
+                        ✨ Variasikan dengan Gemini AI
+                      </button>
+                    </div>
                   </td>
                   {isEditMode && (
                     <td className="px-6 py-4 border-b border-brand-border text-center">
