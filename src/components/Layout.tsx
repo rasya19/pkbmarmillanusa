@@ -539,7 +539,7 @@ export default function Layout() {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
           { icon: Users, label: 'Data Siswa', path: `${prefix}/dashboard/data-siswa` },
-          { icon: UserCheck, label: 'Data Guru', path: `${prefix}/dashboard/data-guru` },
+          { icon: User, label: 'Profil Guru', path: `${prefix}/dashboard/data-guru` },
           {
             icon: BookOpen,
             label: 'Akademik',
@@ -565,7 +565,6 @@ export default function Layout() {
           { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
           { icon: BookMarked, label: isReguler ? 'Bank Modul' : 'Modul Kesetaraan', path: `${prefix}/dashboard/modul` },
           { icon: ShieldCheck, label: isReguler ? 'Data Akreditasi' : 'Data Akreditasi', path: `${prefix}/dashboard/akreditasi` },
-          { icon: User, label: 'Profil Saya', path: `${prefix}/dashboard/profile` },
         ];
       case 'Tamu':
         return [

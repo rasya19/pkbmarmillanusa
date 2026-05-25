@@ -17,7 +17,9 @@ import DataSiswa from './pages/DataSiswa';
 import BankSoal from './pages/BankSoal';
 import ButirSoal from './pages/ButirSoal';
 import HasilUjian from './pages/HasilUjian';
-import Guru from './pages/Guru';
+import DataGuruWrapper from './pages/DataGuruWrapper';
+import TeacherManagement from './pages/TeacherManagement';
+import TeacherProfile from './pages/TeacherProfile';
 import MataPelajaran from './pages/MataPelajaran';
 import DeteksiObjek from './pages/DeteksiObjek';
 import UjianSiswa from './pages/UjianSiswa';
@@ -50,7 +52,6 @@ import Analitik from './pages/Analitik';
 import Settings from './pages/Settings';
 import ModulKesetaraan from './pages/ModulKesetaraan';
 import Akreditasi from './pages/Akreditasi';
-import ProfileGuru from './pages/ProfileGuru';
 import Presensi from './pages/Presensi';
 import AgendaGuru from './pages/AgendaGuru';
 import PresensiSiswa from './pages/PresensiSiswa';
@@ -222,7 +223,7 @@ function AppContent() {
          <Route path="soal" element={<BankSoal />} />
          <Route path="soal/:id/detail" element={<ButirSoal />} />
          <Route path="hasil-ujian" element={<HasilUjian />} />
-         <Route path="data-guru" element={<Guru />} />
+         <Route path="data-guru" element={<DataGuruWrapper />} />
          <Route path="mata-pelajaran" element={<MataPelajaran />} />
          <Route path="akademik" element={<Akademik />} />
          <Route path="presensi" element={<PresensiWrapper />} />
@@ -248,7 +249,7 @@ function AppContent() {
          <Route path="ai-asisten" element={<AiAsisten />} />
          <Route path="feedback" element={<Feedback />} />
          <Route path="settings" element={<Settings />} />
-         <Route path="profile" element={<ProfileGuru />} />
+         <Route path="profile" element={<TeacherProfile />} />
          <Route path="*" element={<ComingSoon />} />
       </Route>
 
@@ -261,18 +262,11 @@ function AppContent() {
             <Route path="modul" element={<ModulKesetaraan />} />
             <Route path="akreditasi" element={<Akreditasi />} />
             <Route path="course/:id" element={<CourseDetail />} />
-            <Route path="students" element={<DataSiswa />} />
-          <Route path="teachers" element={<Guru />} />
-          <Route path="students" element={<DataSiswa />} />
-          <Route path="teachers" element={<Guru />} />
-          <Route path="teachers" element={<Guru />} />
-          <Route path="students" element={<DataSiswa />} />
-          <Route path="teachers" element={<Guru />} />
-          <Route path="data-siswa" element={<DataSiswa />} />
+            <Route path="data-siswa" element={<DataSiswa />} />
             <Route path="soal" element={<BankSoal />} />
             <Route path="soal/:id/detail" element={<ButirSoal />} />
             <Route path="hasil-ujian" element={<HasilUjian />} />
-            <Route path="data-guru" element={<Guru />} />
+            <Route path="data-guru" element={<DataGuruWrapper />} />
             <Route path="mata-pelajaran" element={<MataPelajaran />} />
             <Route path="akademik" element={<Akademik />} />
             <Route path="presensi" element={<PresensiWrapper />} />
@@ -298,7 +292,7 @@ function AppContent() {
             <Route path="ai-asisten" element={<AiAsisten />} />
             <Route path="feedback" element={<Feedback />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="profile" element={<ProfileGuru />} />
+            <Route path="profile" element={<TeacherProfile />} />
          </Route>
       </Route>
 
