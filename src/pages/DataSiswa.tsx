@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Filter, Plus, Edit2, Trash2, 
   User, MapPin, GraduationCap, Upload, X, ShieldCheck, 
-  Phone, CheckCircle2, AlertCircle, Loader2, RefreshCcw
+  Phone, CheckCircle2, AlertCircle, Loader2, RefreshCcw,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -224,6 +225,24 @@ export default function DataSiswa() {
     }
   };
 
+  const downloadTemplate = () => {
+    try {
+      const data = [
+        ["Nama", "NISN", "Kelas", "WhatsApp", "Status", "Password"],
+        ["Budi Santoso", "0012345678", "Kelas VII-A", "08123456789", "Aktif", "123456"],
+        ["Siti Aminah", "0023456789", "Kelas VII-B", "08234567890", "Aktif", "112233"]
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Template Siswa");
+      XLSX.writeFile(wb, "template_import_siswa.xlsx");
+      toast.success("Template Excel berhasil diunduh! Silakan isi data siswa sesuai format.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Gagal mengunduh template Excel: " + err.message);
+    }
+  };
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -305,6 +324,12 @@ export default function DataSiswa() {
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />} 
             Refresh
+          </button>
+          <button 
+            onClick={downloadTemplate}
+            className="bg-white/10 text-white border border-white/20 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-white/20 transition-all shadow-lg"
+          >
+            <Download className="w-4 h-4" /> Template Excel
           </button>
           <button 
             onClick={() => fileInputRef.current?.click()}
