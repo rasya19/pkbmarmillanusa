@@ -133,18 +133,9 @@ export default function PPDB() {
         school_id: school?.slug || applicant.school_id,
         nama: applicant.name,
         nisn: applicant.nisn || '',
-        nik: applicant.nik || '',
-        email: applicant.email || '',
         whatsapp: applicant.whatsapp || '',
-        jk: applicant.jk || '',
-        tempat_lahir: applicant.tempatLahir || '',
-        tanggal_lahir: applicant.tanggalLahir || '',
-        alamat: applicant.alamat || '',
-        paket: applicant.paket || 'Paket C',
-        status: 'Aktif',
-        password: applicant.password || '12345',
-        mustChangePassword: true,
-        created_at: new Date().toISOString()
+        class: applicant.kelas || applicant.class || applicant.paket || 'Paket C',
+        status: 'Aktif'
       };
 
       // 2. Insert into profiles_siswa
